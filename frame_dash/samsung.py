@@ -133,10 +133,13 @@ class SamsungFrameClient:
             )
             logger.info(f"Uploaded image with ID: {new_id}")
 
-            # Select the new image as current art without forcing art mode
+            # Select the new image as current art.
+            # Use show=True only if already in art mode — this switches the displayed
+            # image without forcing art mode on when the user is watching TV.
             if new_id:
-                art.select_image(new_id, show=False)
-                logger.info(f"Selected image {new_id} as current art")
+                in_art_mode = bool(tv.art().get_artmode())
+                art.select_image(new_id, show=in_art_mode)
+                logger.info(f"Selected image {new_id} as current art (show={in_art_mode})")
 
             # Clean up the previous image — must happen after selecting the new one
             # so the TV isn't trying to delete the currently displayed image
