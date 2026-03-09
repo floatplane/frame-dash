@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ theme }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width={{ config.tv_width }}, height={{ config.tv_height }}">
+  <style>
+    {# Inline the CSS so Playwright can render without serving static files #}
+    {% include "static/style.css" %}
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+
+    {# ---- Clock ---- #}
+    {% if config.show_clock %}
+    <div class="clock">
+      <div class="clock__time">{{ now.strftime("%-I:%M") }}</div>
+      <div class="clock__date">{{ now.strftime("%A, %B %-d") }}</div>
+    </div>
+    {% endif %}
+
+    {# ---- Weather ---- #}
+    {% if data.weather %}
+    <div class="weather">
+      <div class="weather__temp">
+        {{ data.weather.temperature | temp_fmt(data.weather.temperature_unit) }}
+      </div>
+      <div class="weather__condition">
+        {{ data.weather.condition | weather_icon }}
+        {{ data.weather.condition | replace("-", " ") | title }}
+      </div>
+      {% if data.weather.humidity is not none %}
+      <div class="weather__details">
+        {{ data.weather.humidity | int }}% humidity
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {# ---- Today's Calendar ---- #}
+    <div class="calendar">
+      <div class="calendar__title">Today</div>
+      {% if data.events_today %}
+      <ul class="calendar__events">
+        {% for event in data.events_today %}
+        <li class="calendar__event">
+          <span class="event__time">{{ event.time_str }}</span>
+          <span class="event__summary">{{ event.summary }}</span>
+          {% if config.calendars | length > 1 %}
+          <span class="event__calendar">{{ event.calendar_name }}</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="calendar__empty">Nothing scheduled</div>
+      {% endif %}
+    </div>
+
+    {# ---- Status / Attention Items ---- #}
+    <div class="status">
+      {# Attention items — things that need action #}
+      {% if data.attention_items %}
+      <ul class="status__items">
+        {% for item in data.attention_items %}
+        <li class="status__item">
+          <span class="status__icon">{{ item | status_icon }}</span>
+          <span class="status__label">
+            {% if item.domain == "sensor" and "," in item.state %}
+              {# Timeframe-style CSV: "icon,Label" — show the label part #}
+              {{ item.state.split(",", 1)[1] | trim }}
+            {% elif item.domain == "lock" and item.state == "unlocked" %}
+              {{ item.friendly_name }} unlocked
+            {% elif item.domain == "light" and item.state == "on" %}
+              {{ item.friendly_name }} on
+            {% elif item.domain == "binary_sensor" %}
+              {{ item.friendly_name }} open
+            {% else %}
+              {{ item.friendly_name }}: {{ item.state }}
+            {% endif %}
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {# Climate info — always shown #}
+      {% if data.climate_states %}
+      <ul class="status__items" style="margin-top: 24px;">
+        {% for item in data.climate_states %}
+        <li class="status__item status__item--climate">
+          <span class="status__icon">
+            {% if item.domain == "climate" %}🌡️
+            {% elif "temperature" in item.entity_id %}🌡️
+            {% elif "humidity" in item.entity_id %}💧
+            {% else %}📊{% endif %}
+          </span>
+          <span class="status__label">
+            {% if item.domain == "climate" %}
+              {{ item.friendly_name }}:
+              {{ item.attributes.get("current_temperature", item.state) }}°
+              → {{ item.attributes.get("temperature", "?") }}°
+            {% elif item.domain == "sensor" %}
+              {{ item.friendly_name }}: {{ item.state }}{{ item.attributes.get("unit_of_measurement", "") }}
+            {% else %}
+              {{ item.friendly_name }}: {{ item.state }}
+            {% endif %}
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+
+    {# ---- Tomorrow Preview ---- #}
+    {% if data.events_tomorrow %}
+    <div class="tomorrow">
+      <div class="tomorrow__title">Tomorrow</div>
+      <ul class="tomorrow__events">
+        {% for event in data.events_tomorrow[:4] %}
+        <li class="tomorrow__event">
+          <span class="event__time">{{ event.time_str }}</span>
+          <span class="event__summary">{{ event.summary }}</span>
+        </li>
+        {% endfor %}
+        {% if data.events_tomorrow | length > 4 %}
+        <li class="tomorrow__event">
+          <span class="event__time"></span>
+          <span class="event__summary" style="color: var(--fg-muted);">
+            +{{ data.events_tomorrow | length - 4 }} more
+          </span>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {# ---- Footer ---- #}
+    <div class="date-footer">
+      Updated {{ now.strftime("%-I:%M %p").lower() }}
+    </div>
+
+  </div>
+</body>
+</html>

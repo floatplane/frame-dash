@@ -1,0 +1,257 @@
+/* Frame Dash - Dashboard Styles
+ *
+ * Designed for high-resolution TV display (3840x2160 default).
+ * Uses large type sizes, generous whitespace, and a calm palette.
+ * No scrolling — everything must fit in a single viewport.
+ */
+
+:root {
+  /* Light theme (default) */
+  --bg: #f5f2eb;
+  --fg: #2c2c2c;
+  --fg-muted: #8a8680;
+  --fg-accent: #5c5650;
+  --divider: #d8d3cb;
+  --attention-bg: #fff3e0;
+  --attention-fg: #e65100;
+  --card-bg: rgba(255, 255, 255, 0.5);
+  --clock-weight: 200;
+}
+
+[data-theme="dark"] {
+  --bg: #1a1a1a;
+  --fg: #e8e4de;
+  --fg-muted: #7a756f;
+  --fg-accent: #b5afa8;
+  --divider: #333330;
+  --attention-bg: rgba(230, 81, 0, 0.15);
+  --attention-fg: #ff9e40;
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --clock-weight: 100;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Inter", "SF Pro Display", -apple-system, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "clock      weather"
+    "calendar   status"
+    "date       tomorrow";
+  width: 100%;
+  height: 100%;
+  padding: 80px 100px;
+  gap: 40px 80px;
+}
+
+/* ---- Clock ---- */
+.clock {
+  grid-area: clock;
+  align-self: start;
+}
+
+.clock__time {
+  font-size: 160px;
+  font-weight: var(--clock-weight);
+  letter-spacing: -6px;
+  line-height: 1;
+  color: var(--fg);
+}
+
+.clock__date {
+  font-size: 42px;
+  font-weight: 300;
+  color: var(--fg-muted);
+  margin-top: 12px;
+}
+
+/* ---- Weather ---- */
+.weather {
+  grid-area: weather;
+  text-align: right;
+  align-self: start;
+}
+
+.weather__temp {
+  font-size: 120px;
+  font-weight: var(--clock-weight);
+  line-height: 1;
+  color: var(--fg);
+}
+
+.weather__condition {
+  font-size: 36px;
+  font-weight: 400;
+  color: var(--fg-muted);
+  margin-top: 8px;
+}
+
+.weather__details {
+  font-size: 28px;
+  color: var(--fg-muted);
+  margin-top: 4px;
+}
+
+/* ---- Calendar ---- */
+.calendar {
+  grid-area: calendar;
+  align-self: start;
+  overflow: hidden;
+}
+
+.calendar__title {
+  font-size: 28px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--fg-muted);
+  margin-bottom: 24px;
+}
+
+.calendar__events {
+  list-style: none;
+}
+
+.calendar__event {
+  display: flex;
+  align-items: baseline;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--divider);
+}
+
+.calendar__event:last-child {
+  border-bottom: none;
+}
+
+.event__time {
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--fg-muted);
+  min-width: 220px;
+  flex-shrink: 0;
+}
+
+.event__summary {
+  font-size: 36px;
+  font-weight: 400;
+  color: var(--fg);
+}
+
+.event__calendar {
+  font-size: 24px;
+  color: var(--fg-muted);
+  margin-left: 16px;
+}
+
+.calendar__empty {
+  font-size: 32px;
+  color: var(--fg-muted);
+  font-style: italic;
+}
+
+/* ---- Status (Attention Items) ---- */
+.status {
+  grid-area: status;
+  align-self: start;
+}
+
+.status__items {
+  list-style: none;
+}
+
+.status__item {
+  display: flex;
+  align-items: center;
+  padding: 18px 28px;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  background: var(--attention-bg);
+}
+
+.status__icon {
+  font-size: 44px;
+  margin-right: 20px;
+  flex-shrink: 0;
+}
+
+.status__label {
+  font-size: 34px;
+  font-weight: 500;
+  color: var(--attention-fg);
+}
+
+/* Climate items (always shown, not "attention") */
+.status__item--climate {
+  background: var(--card-bg);
+}
+
+.status__item--climate .status__label {
+  color: var(--fg-accent);
+  font-weight: 400;
+}
+
+/* When status is empty — the house is healthy */
+.status__healthy {
+  display: none;  /* Intentionally hidden — silence IS the message */
+}
+
+/* ---- Tomorrow Preview ---- */
+.tomorrow {
+  grid-area: tomorrow;
+  align-self: end;
+}
+
+.tomorrow__title {
+  font-size: 24px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--fg-muted);
+  margin-bottom: 16px;
+}
+
+.tomorrow__events {
+  list-style: none;
+}
+
+.tomorrow__event {
+  display: flex;
+  align-items: baseline;
+  padding: 8px 0;
+}
+
+.tomorrow__event .event__time {
+  font-size: 26px;
+  min-width: 180px;
+}
+
+.tomorrow__event .event__summary {
+  font-size: 28px;
+  color: var(--fg-accent);
+}
+
+/* ---- Date footer ---- */
+.date-footer {
+  grid-area: date;
+  align-self: end;
+  font-size: 24px;
+  color: var(--fg-muted);
+  opacity: 0.5;
+}

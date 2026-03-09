@@ -1,0 +1,31 @@
+configuration:
+  samsung_tv_ip:
+    name: Samsung Frame TV IP
+    description: The static IP address of your Samsung Frame TV
+  update_interval:
+    name: Update Interval
+    description: How often to update the dashboard (in seconds)
+  tv_width:
+    name: TV Width
+    description: Horizontal resolution of the TV in pixels
+  tv_height:
+    name: TV Height
+    description: Vertical resolution of the TV in pixels
+  calendars:
+    name: Calendars
+    description: List of Home Assistant calendar entity IDs to display
+  watched_entities:
+    name: Watched Entities
+    description: Entities to monitor on the dashboard
+  theme:
+    name: Theme
+    description: Color theme for the dashboard
+  show_clock:
+    name: Show Clock
+    description: Display the current time on the dashboard
+  show_weather:
+    name: Show Weather
+    description: Display weather information
+  weather_entity:
+    name: Weather Entity
+    description: Home Assistant weather entity ID to use
