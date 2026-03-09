@@ -55,7 +55,7 @@ class Config:
                 raw = json.load(f)
         elif Path("local.yaml").exists():
             # Standalone mode: YAML config
-            with open("config.yaml") as f:
+            with open("local.yaml") as f:
                 raw = yaml.safe_load(f)
         else:
             raw = {}
