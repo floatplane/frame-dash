@@ -6,3 +6,5 @@ config.yaml
 *.png
 samsung-tv-token.txt
 .env
+.claude
+preview.html
