@@ -69,17 +69,16 @@ class SamsungFrameClient:
         """On first run after restart, find and clean up any orphaned images."""
         try:
             available = art.available()
-            logger.info(f"DEBUG available() sample: {available[:2] if isinstance(available, list) else available}")
             if not isinstance(available, list):
                 return
             my_images = [
                 img for img in available
-                if isinstance(img, dict) and img.get("content_id", "").startswith("MY_")
+                if isinstance(img, dict) and img.get("content_type") == "mobile"
             ]
             if not my_images:
                 return
             # Keep only the most recent; delete the rest
-            my_images.sort(key=lambda x: x.get("content_id", ""))
+            my_images.sort(key=lambda x: x.get("image_date", ""))
             for img in my_images[:-1]:
                 try:
                     art.delete(img["content_id"])
