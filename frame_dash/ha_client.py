@@ -191,7 +191,7 @@ class HAClient:
 
     def fetch_dashboard_data(self) -> DashboardData:
         """Fetch all data needed for a dashboard render."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now().astimezone()
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow_end = today_start + timedelta(days=2)
 
