@@ -49,11 +49,11 @@ If the status area is empty, your home is healthy.
 
 ### 1. Add the repository
 
-In Home Assistant, go to **Settings → Add-ons → Add-on Store → ⋮ → Repositories** and add this repository URL.
+In Home Assistant, go to **Settings → Apps → App store → ⋮ → Repositories** and add this repository URL. If the repository doesn't appear after adding, refresh your browser; if it still doesn't show, check **Settings → System → Logs → Supervisor** for errors.
 
 ### 2. Install and configure
 
-Install "Frame Dash" from the add-on store, then configure it:
+Install "Frame Dash" from the app store, then configure it:
 
 ```yaml
 # Samsung Frame TV IP (set a static IP on your TV first)
