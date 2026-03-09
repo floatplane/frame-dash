@@ -13,7 +13,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Install Python dependencies via uv into a managed venv
 COPY pyproject.toml uv.lock /opt/frame-dash/
-RUN cd /opt/frame-dash && uv sync --frozen --no-dev \
+RUN cd /opt/frame-dash && uv sync --frozen --no-dev --no-install-project \
     && uv run playwright install --with-deps chromium
 
 ENV PATH="/opt/frame-dash/.venv/bin:$PATH"
