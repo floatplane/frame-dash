@@ -135,13 +135,16 @@ def main():
                             "Backing off to 10x normal interval."
                         )
 
-                # Sleep until next update
+                # Sleep until the next aligned clock boundary
                 interval = config.update_interval
                 if consecutive_failures >= max_failures:
                     interval *= 10  # Back off on repeated failures
 
-                logger.info(f"Sleeping {interval}s until next update...")
-                time.sleep(interval)
+                now_ts = time.time()
+                next_tick = (now_ts // interval + 1) * interval
+                sleep_secs = next_tick - now_ts
+                logger.info(f"Sleeping {sleep_secs:.1f}s until next update...")
+                time.sleep(sleep_secs)
 
     except KeyboardInterrupt:
         logger.info("Shutting down...")
