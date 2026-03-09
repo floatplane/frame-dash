@@ -4,24 +4,25 @@ FROM ${BUILD_FROM}
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
-    python3-pip \
     python3-venv \
     jq \
     fonts-inter \
     fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/*
 
-# Create virtual environment to avoid system package conflicts
-RUN python3 -m venv /opt/frame-dash-venv
-ENV PATH="/opt/frame-dash-venv/bin:$PATH"
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Install Python dependencies
-COPY requirements.txt /tmp/requirements.txt
-RUN pip install --no-cache-dir -r /tmp/requirements.txt \
-    && playwright install --with-deps chromium
+# Install Python dependencies via uv into a managed venv
+COPY pyproject.toml uv.lock /opt/frame-dash/
+RUN cd /opt/frame-dash && uv sync --frozen --no-dev \
+    && uv run playwright install --with-deps chromium
+
+ENV PATH="/opt/frame-dash/.venv/bin:$PATH"
 
 # Copy application
 COPY frame_dash/ /opt/frame-dash/frame_dash/
+WORKDIR /opt/frame-dash
 COPY run.sh /
 
 RUN chmod +x /run.sh
