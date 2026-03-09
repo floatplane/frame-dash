@@ -146,9 +146,9 @@ uv run python -m frame_dash.main
 ### Local preview (no HA or TV needed)
 
 ```bash
-python preview.py          # renders preview.html, opens in browser
-python preview.py --png    # renders preview.png at TV resolution via Playwright
-python preview.py --dark   # dark theme
+uv run python preview.py          # renders preview.html, opens in browser
+uv run python preview.py --png    # renders preview.png at TV resolution via Playwright
+uv run python preview.py --dark   # dark theme
 ```
 
 ## Project Structure
