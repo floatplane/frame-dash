@@ -10,8 +10,5 @@ export SUPERVISOR_TOKEN="${SUPERVISOR_TOKEN}"
 export FRAME_DASH_CONFIG="${CONFIG_PATH}"
 export FRAME_DASH_DATA="/data"
 
-# Activate venv
-source /opt/frame-dash-venv/bin/activate
-
 # Run the main application
-python -m frame_dash.main
+exec /opt/frame-dash/.venv/bin/python -m frame_dash.main

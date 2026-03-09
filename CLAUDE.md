@@ -24,7 +24,9 @@ frame-dash/
 ├── build.yaml               # Base images per architecture (Debian bookworm)
 ├── Dockerfile               # Add-on container — Debian-based for Playwright compat
 ├── run.sh                   # Add-on entry point (bashio wrapper → Python)
-├── requirements.txt         # Python deps: playwright, samsungtvws, jinja2, httpx, pyyaml, pillow
+├── pyproject.toml           # Python deps: playwright, samsungtvws, jinja2, httpx, pyyaml, pillow
+├── uv.lock                  # Locked dependency versions
+├── preview.py               # Local preview script (fake data, no HA/TV needed)
 ├── config.example.yaml      # Standalone dev config template
 ├── repository.yaml          # HA add-on repo metadata
 ├── translations/en.yaml     # Config option descriptions for HA UI
@@ -52,17 +54,17 @@ frame-dash/
 ## Running locally for development
 
 ```bash
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-playwright install chromium
+uv sync
+uv run playwright install chromium
+
+# Preview with fake data — no HA or TV needed
+python preview.py           # HTML, opens in browser
+python preview.py --png     # PNG at TV resolution
+
+# Full cycle against real HA (needs config.yaml)
 cp config.example.yaml config.yaml
 # Edit config.yaml with your HA URL, token, TV IP
-
-# Render only (no TV push) — saves dashboard.png locally
-python -m frame_dash.main --render-only --once --output dashboard.png
-
-# Full cycle
-python -m frame_dash.main --once
+uv run python -m frame_dash.main --once
 ```
 
 ## Design decisions to know about

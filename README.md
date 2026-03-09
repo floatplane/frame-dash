@@ -112,8 +112,7 @@ weather_entity: "weather.home"
 The art mode API works reliably with 2020-2021 Frame TVs. Support for 2022+ models varies. Test with:
 
 ```bash
-pip install samsungtvws
-python -c "
+uvx --from samsungtvws python -c "
 from samsungtvws import SamsungTVWS
 tv = SamsungTVWS('YOUR_TV_IP')
 print(tv.art().supported())
@@ -127,34 +126,30 @@ print(tv.art().supported())
 ```bash
 # Clone and install
 git clone https://github.com/YOUR_USER/frame-dash.git
-cd frame-dash/frame-dash
+cd frame-dash
 
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-playwright install chromium
+# Install dependencies
+uv sync
+uv run playwright install chromium
 
 # Copy and edit config
 cp config.example.yaml config.yaml
 # Edit config.yaml with your settings
 
 # Run once (renders and pushes)
-python -m frame_dash.main --once
+uv run python -m frame_dash.main --once
 
 # Run as daemon
-python -m frame_dash.main
+uv run python -m frame_dash.main
 ```
 
-### Running the renderer only (no TV push)
-
-Useful for designing the dashboard layout:
+### Local preview (no HA or TV needed)
 
 ```bash
-python -m frame_dash.main --render-only --output dashboard.png
+python preview.py          # renders preview.html, opens in browser
+python preview.py --png    # renders preview.png at TV resolution via Playwright
+python preview.py --dark   # dark theme
 ```
-
-This saves the rendered PNG locally so you can iterate on the template.
 
 ## Project Structure
 
@@ -180,7 +175,9 @@ frame-dash/
 │       └── static/
 │           ├── style.css
 │           └── fonts/
-├── requirements.txt
+├── pyproject.toml
+├── uv.lock
+├── preview.py
 ├── config.example.yaml
 └── README.md
 ```
