@@ -3,8 +3,6 @@ FROM ${BUILD_FROM}
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-venv \
     jq \
     fonts-inter \
     fonts-noto-color-emoji \
