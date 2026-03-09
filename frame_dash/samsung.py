@@ -69,6 +69,7 @@ class SamsungFrameClient:
         """On first run after restart, find and clean up any orphaned images."""
         try:
             available = art.available()
+            logger.info(f"DEBUG available() sample: {available[:2] if isinstance(available, list) else available}")
             if not isinstance(available, list):
                 return
             my_images = [
