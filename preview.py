@@ -139,7 +139,8 @@ def fake_data(now: datetime) -> DashboardData:
         condition="partlycloudy",
         temperature=52.0,
         temperature_unit="°F",
-        humidity=38,
+        temp_high=64.0,
+        temp_low=31.0,
     )
 
     all_states = {e.entity_id: e for e in attention_items + climate_states}

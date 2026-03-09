@@ -29,15 +29,15 @@
         {{ data.weather.condition | weather_icon }}
         {{ data.weather.condition | replace("-", " ") | title }}
       </div>
-      {% if data.weather.humidity is not none %}
+      {% if data.weather.temp_high is not none and data.weather.temp_low is not none %}
       <div class="weather__details">
-        {{ data.weather.humidity | int }}% humidity
+        {{ data.weather.temp_high | temp_fmt(data.weather.temperature_unit) }} / {{ data.weather.temp_low | temp_fmt(data.weather.temperature_unit) }}
       </div>
       {% endif %}
     </div>
     {% endif %}
 
-    {# ---- Today's Calendar ---- #}
+    {# ---- Calendar (Today + Tomorrow) ---- #}
     <div class="calendar">
       <div class="calendar__title">Today</div>
       {% if data.events_today %}
@@ -54,6 +54,21 @@
       </ul>
       {% else %}
       <div class="calendar__empty">Nothing scheduled</div>
+      {% endif %}
+
+      {% if data.events_tomorrow %}
+      <div class="calendar__title calendar__title--section">Tomorrow</div>
+      <ul class="calendar__events">
+        {% for event in data.events_tomorrow %}
+        <li class="calendar__event">
+          <span class="event__time">{{ event.time_str }}</span>
+          <span class="event__summary">{{ event.summary }}</span>
+          {% if config.calendars | length > 1 %}
+          <span class="event__calendar">{{ event.calendar_name }}</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
       {% endif %}
     </div>
 
@@ -111,29 +126,6 @@
       </ul>
       {% endif %}
     </div>
-
-    {# ---- Tomorrow Preview ---- #}
-    {% if data.events_tomorrow %}
-    <div class="tomorrow">
-      <div class="tomorrow__title">Tomorrow</div>
-      <ul class="tomorrow__events">
-        {% for event in data.events_tomorrow[:4] %}
-        <li class="tomorrow__event">
-          <span class="event__time">{{ event.time_str }}</span>
-          <span class="event__summary">{{ event.summary }}</span>
-        </li>
-        {% endfor %}
-        {% if data.events_tomorrow | length > 4 %}
-        <li class="tomorrow__event">
-          <span class="event__time"></span>
-          <span class="event__summary" style="color: var(--fg-muted);">
-            +{{ data.events_tomorrow | length - 4 }} more
-          </span>
-        </li>
-        {% endif %}
-      </ul>
-    </div>
-    {% endif %}
 
   </div>
 </body>

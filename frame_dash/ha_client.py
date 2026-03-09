@@ -74,8 +74,8 @@ class WeatherData:
     condition: str  # e.g., "sunny", "cloudy", "rainy"
     temperature: float
     temperature_unit: str  # "°F" or "°C"
-    humidity: float | None = None
-    forecast_today: dict | None = None
+    temp_high: float | None = None
+    temp_low: float | None = None
 
 
 @dataclass
@@ -176,17 +176,43 @@ class HAClient:
         )
 
     def get_weather(self, entity_id: str) -> WeatherData | None:
-        """Fetch weather data from a weather entity."""
+        """Fetch weather data from a weather entity, including today's high/low."""
         state = self.get_entity_state(entity_id)
         if not state:
             return None
 
         attrs = state.attributes
+        temp_high = None
+        temp_low = None
+
+        # Fetch hourly forecast to compute today's high/low
+        try:
+            resp = self.client.post(
+                "/api/services/weather/get_forecasts",
+                json={"type": "hourly", "entity_id": entity_id},
+                params={"return_response": "true"},
+            )
+            resp.raise_for_status()
+            forecasts = resp.json().get(entity_id, {}).get("forecast", [])
+            today = datetime.now().astimezone().date()
+            today_temps = [
+                f["temperature"]
+                for f in forecasts
+                if "datetime" in f and "temperature" in f
+                and datetime.fromisoformat(f["datetime"]).astimezone().date() == today
+            ]
+            if today_temps:
+                temp_high = max(today_temps)
+                temp_low = min(today_temps)
+        except Exception as e:
+            logger.warning(f"Could not fetch hourly forecast for {entity_id}: {e}")
+
         return WeatherData(
             condition=state.state,
             temperature=attrs.get("temperature", 0),
             temperature_unit=attrs.get("temperature_unit", "°F"),
-            humidity=attrs.get("humidity"),
+            temp_high=temp_high,
+            temp_low=temp_low,
         )
 
     def fetch_dashboard_data(self) -> DashboardData:

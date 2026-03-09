@@ -50,11 +50,10 @@ html, body {
 .dashboard {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr;
   grid-template-areas:
     "clock      weather"
-    "calendar   status"
-    "date       tomorrow";
+    "calendar   status";
   width: 100%;
   height: 100%;
   padding: 80px 100px;
@@ -123,6 +122,10 @@ html, body {
   letter-spacing: 3px;
   color: var(--fg-muted);
   margin-bottom: 24px;
+}
+
+.calendar__title--section {
+  margin-top: 48px;
 }
 
 .calendar__events {
@@ -212,46 +215,3 @@ html, body {
   display: none;  /* Intentionally hidden — silence IS the message */
 }
 
-/* ---- Tomorrow Preview ---- */
-.tomorrow {
-  grid-area: tomorrow;
-  align-self: end;
-}
-
-.tomorrow__title {
-  font-size: 24px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  color: var(--fg-muted);
-  margin-bottom: 16px;
-}
-
-.tomorrow__events {
-  list-style: none;
-}
-
-.tomorrow__event {
-  display: flex;
-  align-items: baseline;
-  padding: 8px 0;
-}
-
-.tomorrow__event .event__time {
-  font-size: 26px;
-  min-width: 180px;
-}
-
-.tomorrow__event .event__summary {
-  font-size: 28px;
-  color: var(--fg-accent);
-}
-
-/* ---- Date footer ---- */
-.date-footer {
-  grid-area: date;
-  align-self: end;
-  font-size: 24px;
-  color: var(--fg-muted);
-  opacity: 0.5;
-}
