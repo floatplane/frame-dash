@@ -29,6 +29,7 @@ class WatchedEntities:
 @dataclass
 class Config:
     samsung_tv_ip: str = ""
+    samsung_tv_entity: str = ""
     update_interval: int = 300
     tv_width: int = 3840
     tv_height: int = 2160
@@ -71,6 +72,7 @@ class Config:
 
         config = cls(
             samsung_tv_ip=raw.get("samsung_tv_ip", ""),
+            samsung_tv_entity=raw.get("samsung_tv_entity", ""),
             update_interval=raw.get("update_interval", 300),
             tv_width=raw.get("tv_width", 3840),
             tv_height=raw.get("tv_height", 2160),

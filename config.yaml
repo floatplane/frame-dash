@@ -15,6 +15,7 @@ map:
     read_only: false
 options:
   samsung_tv_ip: ""
+  samsung_tv_entity: ""
   update_interval: 300
   tv_width: 3840
   tv_height: 2160
@@ -31,6 +32,7 @@ options:
   weather_entity: "weather.home"
 schema:
   samsung_tv_ip: str
+  samsung_tv_entity: str?
   update_interval: int
   tv_width: int
   tv_height: int

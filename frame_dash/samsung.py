@@ -90,11 +90,27 @@ class SamsungFrameClient:
         except Exception as e:
             logger.warning(f"Could not recover previous image ID: {e}")
 
-    def push_image(self, image_path: str) -> bool:
+    def _is_tv_on(self, ha_client) -> bool:
+        """Check TV power state via HA entity, if configured."""
+        entity_id = self.config.samsung_tv_entity
+        if not entity_id:
+            return True  # No entity configured — assume on, let connection decide
+        state = ha_client.get_entity_state(entity_id)
+        if state is None:
+            return True  # Can't determine — try anyway
+        on = state.state not in ("off", "unavailable", "unknown")
+        if not on:
+            logger.info(f"TV is {state.state}, skipping push")
+        return on
+
+    def push_image(self, image_path: str, ha_client=None) -> bool:
         """Upload a PNG image and set it as the current art.
 
         Returns True if successful.
         """
+        if ha_client and not self._is_tv_on(ha_client):
+            return True  # TV is off — skip silently
+
         try:
             tv = self._connect()
             art = tv.art()

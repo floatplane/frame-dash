@@ -50,7 +50,7 @@ def run_once(
         # 3. Push to Samsung Frame (if configured)
         if samsung and config.samsung_tv_ip:
             logger.info("Pushing to Samsung Frame TV...")
-            success = samsung.push_image(output_path)
+            success = samsung.push_image(output_path, ha_client=ha_client)
             if not success:
                 logger.warning("Failed to push to TV — will retry next cycle")
                 return False
