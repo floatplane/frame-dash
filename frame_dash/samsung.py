@@ -122,9 +122,11 @@ class SamsungFrameClient:
                 art.select_image(new_id, show=True)
                 logger.info(f"Selected image {new_id} as current art")
 
-            # Clean up the previous image to avoid filling storage
+            # Clean up the previous image — must happen after selecting the new one
+            # so the TV isn't trying to delete the currently displayed image
             if self._previous_image_id and self._previous_image_id != new_id:
                 try:
+                    time.sleep(1)
                     art.delete(self._previous_image_id)
                     logger.info(f"Deleted previous image {self._previous_image_id}")
                 except Exception as e:
