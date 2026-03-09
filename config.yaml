@@ -1,6 +1,6 @@
 name: "Frame Dash"
 description: "Renders a calm family dashboard and pushes it to a Samsung Frame TV via Art Mode"
-version: "0.1.6"
+version: "0.1.7"
 slug: "frame-dash"
 url: "https://github.com/floatplane/frame-dash"
 arch:
