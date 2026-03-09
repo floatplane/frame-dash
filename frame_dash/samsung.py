@@ -136,12 +136,9 @@ class SamsungFrameClient:
 
             return True
 
-        except ConnectionRefusedError:
-            logger.error(
-                f"Connection refused to {self.tv_ip}. "
-                "Is the TV on and connected to the network?"
-            )
-            return False
+        except (ConnectionRefusedError, OSError, TimeoutError) as e:
+            logger.info(f"TV unreachable (probably off): {e}")
+            return True  # Not a real failure — skip silently
         except Exception as e:
             logger.error(f"Failed to push image to Frame TV: {e}")
             return False
