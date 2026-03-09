@@ -103,9 +103,9 @@ html, body {
 }
 
 .weather__details {
-  font-size: 28px;
+  font-size: 36px;
   color: var(--fg-muted);
-  margin-top: 4px;
+  margin-top: 8px;
 }
 
 /* ---- Calendar ---- */
