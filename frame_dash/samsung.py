@@ -118,9 +118,9 @@ class SamsungFrameClient:
             )
             logger.info(f"Uploaded image with ID: {new_id}")
 
-            # Select the new image as current art
+            # Select the new image as current art without forcing art mode
             if new_id:
-                art.select_image(new_id, show=True)
+                art.select_image(new_id, show=False)
                 logger.info(f"Selected image {new_id} as current art")
 
             # Clean up the previous image — must happen after selecting the new one
@@ -134,14 +134,6 @@ class SamsungFrameClient:
                     logger.warning(f"Could not delete previous image: {e}")
 
             self._previous_image_id = new_id
-
-            # Ensure art mode is active
-            try:
-                if not art.get_artmode():
-                    art.set_artmode(True)
-                    logger.info("Switched TV to art mode")
-            except Exception:
-                pass  # TV might already be in art mode
 
             return True
 
