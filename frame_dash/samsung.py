@@ -65,6 +65,31 @@ class SamsungFrameClient:
             logger.warning(f"Could not check art mode status: {e}")
             return False
 
+    def _recover_previous_image_id(self, art) -> None:
+        """On first run after restart, find and clean up any orphaned images."""
+        try:
+            available = art.available()
+            if not isinstance(available, list):
+                return
+            my_images = [
+                img for img in available
+                if isinstance(img, dict) and img.get("content_id", "").startswith("MY_")
+            ]
+            if not my_images:
+                return
+            # Keep only the most recent; delete the rest
+            my_images.sort(key=lambda x: x.get("content_id", ""))
+            for img in my_images[:-1]:
+                try:
+                    art.delete(img["content_id"])
+                    logger.info(f"Cleaned up orphaned image {img['content_id']}")
+                except Exception:
+                    pass
+            self._previous_image_id = my_images[-1]["content_id"]
+            logger.info(f"Recovered previous image ID: {self._previous_image_id}")
+        except Exception as e:
+            logger.warning(f"Could not recover previous image ID: {e}")
+
     def push_image(self, image_path: str) -> bool:
         """Upload a PNG image and set it as the current art.
 
@@ -73,6 +98,10 @@ class SamsungFrameClient:
         try:
             tv = self._connect()
             art = tv.art()
+
+            # On first push after a restart, clean up any orphaned images
+            if self._previous_image_id is None:
+                self._recover_previous_image_id(art)
 
             # Read the image file
             with open(image_path, "rb") as f:
