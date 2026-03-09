@@ -193,7 +193,7 @@ class HAClient:
                 params={"return_response": "true"},
             )
             resp.raise_for_status()
-            forecasts = resp.json().get(entity_id, {}).get("forecast", [])
+            forecasts = resp.json().get("service_response", {}).get(entity_id, {}).get("forecast", [])
             today = datetime.now().astimezone().date()
             today_temps = [
                 f["temperature"]
