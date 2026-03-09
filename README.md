@@ -133,8 +133,8 @@ uv sync
 uv run playwright install chromium
 
 # Copy and edit config
-cp config.example.yaml config.yaml
-# Edit config.yaml with your settings
+cp local.example.yaml local.yaml
+# Edit local.yaml with your HA URL, token, TV IP
 
 # Run once (renders and pushes)
 uv run python -m frame_dash.main --once
@@ -178,7 +178,7 @@ frame-dash/
 ├── pyproject.toml
 ├── uv.lock
 ├── preview.py
-├── config.example.yaml
+├── local.example.yaml
 └── README.md
 ```
 

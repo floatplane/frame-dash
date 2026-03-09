@@ -14,7 +14,7 @@ The main loop in `frame_dash/main.py` runs a cycle every N seconds (default 300)
 2. **Render** — `renderer.py` uses Jinja2 to fill an HTML template, then Playwright (headless Chromium) screenshots it to a PNG at the TV's native resolution
 3. **Push** — `samsung.py` uploads the PNG to the Frame TV via the `samsungtvws` library's art mode API, selects it as current art, and deletes the previous image to avoid filling TV storage
 
-When running as an HA add-on, the `SUPERVISOR_TOKEN` env var provides API access automatically. For standalone dev, a long-lived access token is configured in `config.yaml`.
+When running as an HA add-on, the `SUPERVISOR_TOKEN` env var provides API access automatically. For standalone dev, a long-lived access token is configured in `local.yaml`.
 
 ## Project structure
 
@@ -27,7 +27,7 @@ frame-dash/
 ├── pyproject.toml           # Python deps: playwright, samsungtvws, jinja2, httpx, pyyaml, pillow
 ├── uv.lock                  # Locked dependency versions
 ├── preview.py               # Local preview script (fake data, no HA/TV needed)
-├── config.example.yaml      # Standalone dev config template
+├── local.example.yaml       # Standalone dev config template
 ├── repository.yaml          # HA add-on repo metadata
 ├── translations/en.yaml     # Config option descriptions for HA UI
 ├── frame_dash/
@@ -61,9 +61,9 @@ uv run playwright install chromium
 python preview.py           # HTML, opens in browser
 python preview.py --png     # PNG at TV resolution
 
-# Full cycle against real HA (needs config.yaml)
-cp config.example.yaml config.yaml
-# Edit config.yaml with your HA URL, token, TV IP
+# Full cycle against real HA (needs local.yaml)
+cp local.example.yaml local.yaml
+# Edit local.yaml with your HA URL, token, TV IP
 uv run python -m frame_dash.main --once
 ```
 
@@ -79,7 +79,7 @@ uv run python -m frame_dash.main --once
 
 ### Must do before first real use
 - [ ] **Determine Brian's Samsung Frame model year** — art mode API works reliably on 2020-2021 models. 2022+ may have restrictions. Test with `tv.art().supported()`.
-- [ ] **Fill in actual HA entity IDs** — the config.example.yaml has placeholder entities. Need real lock, light, climate, calendar entity IDs from Brian's HA instance.
+- [ ] **Fill in actual HA entity IDs** — the local.example.yaml has placeholder entities. Need real lock, light, climate, calendar entity IDs from Brian's HA instance.
 - [ ] **Test the samsungtvws upload→select→delete cycle** — the `samsung.py` cleanup logic needs real-device testing. The `upload()` return value (image ID) format may vary by TV model.
 - [ ] **Font loading in Playwright** — the Dockerfile installs `fonts-inter` but the CSS falls back to system-ui. Verify Inter actually renders in the headless Chromium screenshot. May need to embed fonts via @font-face with base64.
 

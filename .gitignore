@@ -2,7 +2,7 @@ __pycache__/
 *.pyc
 venv/
 .venv/
-config.yaml
+local.yaml
 *.png
 samsung-tv-token.txt
 .env

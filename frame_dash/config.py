@@ -2,7 +2,7 @@
 
 Supports two modes:
 - HA add-on: reads from /data/options.json (set by FRAME_DASH_CONFIG env var)
-- Standalone: reads from config.yaml in the current directory
+- Standalone: reads from local.yaml in the current directory
 """
 
 import json
@@ -53,7 +53,7 @@ class Config:
             # HA add-on mode: JSON options
             with open(config_path) as f:
                 raw = json.load(f)
-        elif Path("config.yaml").exists():
+        elif Path("local.yaml").exists():
             # Standalone mode: YAML config
             with open("config.yaml") as f:
                 raw = yaml.safe_load(f)

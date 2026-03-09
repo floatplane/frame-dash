@@ -1,0 +1,51 @@
+name: "Frame Dash"
+description: "Renders a calm family dashboard and pushes it to a Samsung Frame TV via Art Mode"
+version: "0.1.0"
+slug: "frame-dash"
+url: "https://github.com/floatplane/frame-dash"
+arch:
+  - amd64
+  - aarch64
+startup: "application"
+boot: "auto"
+homeassistant_api: true
+hassio_api: true
+map:
+  - type: share
+    read_only: false
+options:
+  samsung_tv_ip: ""
+  update_interval: 300
+  tv_width: 3840
+  tv_height: 2160
+  calendars:
+    - "calendar.family"
+  watched_entities:
+    doors: []
+    lights: []
+    climate: []
+    alerts: []
+  theme: "light"
+  show_clock: true
+  show_weather: true
+  weather_entity: "weather.home"
+schema:
+  samsung_tv_ip: str
+  update_interval: int
+  tv_width: int
+  tv_height: int
+  calendars:
+    - str
+  watched_entities:
+    doors:
+      - str
+    lights:
+      - str
+    climate:
+      - str
+    alerts:
+      - str
+  theme: "list(light|dark)"
+  show_clock: bool
+  show_weather: bool
+  weather_entity: str
