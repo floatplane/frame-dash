@@ -137,11 +137,15 @@ class HAClient:
             # All-day events have "date", timed events have "dateTime"
             all_day = "date" in start_raw
             if all_day:
-                evt_start = datetime.fromisoformat(start_raw["date"])
-                evt_end = datetime.fromisoformat(end_raw["date"])
+                evt_start = datetime.fromisoformat(start_raw["date"]).replace(tzinfo=timezone.utc)
+                evt_end = datetime.fromisoformat(end_raw["date"]).replace(tzinfo=timezone.utc)
             else:
                 evt_start = datetime.fromisoformat(start_raw["dateTime"])
                 evt_end = datetime.fromisoformat(end_raw["dateTime"])
+                if evt_start.tzinfo is None:
+                    evt_start = evt_start.replace(tzinfo=timezone.utc)
+                if evt_end.tzinfo is None:
+                    evt_end = evt_end.replace(tzinfo=timezone.utc)
 
             # Get a friendly name for the calendar
             cal_name = calendar_id.replace("calendar.", "").replace("_", " ").title()
