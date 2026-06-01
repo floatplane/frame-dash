@@ -35,12 +35,15 @@ frame-dash/
 │   ├── main.py              # CLI entry point + main loop
 │   ├── config.py            # Config loading (HA add-on JSON or standalone YAML)
 │   ├── ha_client.py         # HA REST API client (calendars, states, weather)
-│   ├── renderer.py          # Jinja2 + Playwright HTML→PNG rendering
+│   ├── renderer.py          # Jinja2 + Playwright HTML→PNG rendering (render + render_eink)
 │   ├── samsung.py           # Samsung Frame TV art mode push via samsungtvws
+│   ├── byos.py              # BYOS HTTP server for TRMNL X e-ink devices
 │   └── templates/
-│       ├── base.html.j2     # Main dashboard template
+│       ├── base.html.j2     # Main TV dashboard template
+│       ├── eink.html.j2     # E-ink (TRMNL X) dashboard template
 │       └── static/
-│           └── style.css    # Dashboard styles (light/dark themes)
+│           ├── style.css    # TV dashboard styles (light/dark themes)
+│           └── eink.css     # E-ink grayscale styles (black-on-white)
 └── README.md
 ```
 
@@ -74,6 +77,7 @@ uv run python -m frame_dash.main --once
 - **Attention-only status** — doors/locks/lights are only shown when they're in a "problem" state (unlocked, open, on). The `EntityState.is_problem` property in `ha_client.py` defines this logic per domain.
 - **Climate always shown** — entities in the `climate` watched list are always displayed, not just when problematic.
 - **Timeframe-style sensors** — supports HA template sensors using the `"icon,Label"` CSV format from Timeframe. Any `sensor.timeframe_*` entity with this format gets rendered as a status item.
+- **E-ink via embedded BYOS server** — when `eink_enabled`, the add-on runs a small HTTP server (`byos.py`) implementing TRMNL's BYOS device API (`/api/setup`, `/api/display`, `/api/log`, `/images/<hash>.png`). The device polls it and displays a grayscale render of a separate, simplified template (`eink.html.j2`) — landscape, black-on-white, no clock (an infrequently-refreshed panel showing a stale time is worse than none), with an "Updated HH:MM" footer. `render_eink()` converts to 8-bit grayscale via Pillow; the firmware handles the 16-level quantize/dither. The same fetched `DashboardData` feeds both the TV and e-ink renders.
 
 ## Open tasks and known gaps
 

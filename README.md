@@ -99,6 +99,13 @@ theme: "light"  # "light" or "dark"
 show_clock: true
 show_weather: true
 weather_entity: "weather.home"
+
+# E-ink display (TRMNL X) — optional
+eink_enabled: false
+eink_width: 1872
+eink_height: 1404
+eink_port: 2300
+eink_refresh_rate: 300  # how often the device polls, in seconds
 ```
 
 ### 3. Samsung Frame TV setup
@@ -118,6 +125,22 @@ tv = SamsungTVWS('YOUR_TV_IP')
 print(tv.art().supported())
 "
 ```
+
+### 5. E-ink display (TRMNL X) — optional
+
+Frame Dash can also serve a grayscale version of the dashboard to a
+[TRMNL X](https://shop.trmnl.com/products/trmnl-x) (or compatible) e-ink panel
+over its "BYOS" (build-your-own-server) protocol — useful for a calmer,
+always-on display on a dresser or desk.
+
+1. Set `eink_enabled: true` and restart the add-on.
+2. The add-on serves the BYOS API at `http://<home-assistant-ip>:2300`.
+3. Point the TRMNL X at that base URL as its server. The device registers
+   itself (`/api/setup`), then polls `/api/display` every `eink_refresh_rate`
+   seconds and displays the returned grayscale image.
+
+The e-ink layout is a separate, simplified template (`eink.html.j2`): landscape,
+high-contrast black-on-white, no clock, with a small "Updated HH:MM" footer.
 
 ## Development
 
@@ -146,9 +169,11 @@ uv run python -m frame_dash.main
 ### Local preview (no HA or TV needed)
 
 ```bash
-uv run python preview.py          # renders preview.html, opens in browser
-uv run python preview.py --png    # renders preview.png at TV resolution via Playwright
-uv run python preview.py --dark   # dark theme
+uv run python preview.py            # renders preview.html, opens in browser
+uv run python preview.py --png      # renders preview.png at TV resolution via Playwright
+uv run python preview.py --dark     # dark theme
+uv run python preview.py --eink         # renders the e-ink layout (HTML)
+uv run python preview.py --eink --png   # renders grayscale e-ink PNG at device resolution
 ```
 
 ## Project Structure
@@ -165,16 +190,13 @@ frame-dash/
 │   ├── ha_client.py     # Home Assistant REST API client
 │   ├── renderer.py      # HTML → PNG rendering via Playwright
 │   ├── samsung.py       # Samsung Frame art mode push
+│   ├── byos.py          # BYOS server for TRMNL X e-ink devices
 │   └── templates/
-│       ├── base.html.j2       # Main dashboard template
-│       ├── components/
-│       │   ├── clock.html.j2
-│       │   ├── calendar.html.j2
-│       │   ├── status.html.j2
-│       │   └── weather.html.j2
+│       ├── base.html.j2       # Main TV dashboard template
+│       ├── eink.html.j2       # E-ink (TRMNL X) dashboard template
 │       └── static/
-│           ├── style.css
-│           └── fonts/
+│           ├── style.css      # TV styles
+│           └── eink.css       # E-ink grayscale styles
 ├── pyproject.toml
 ├── uv.lock
 ├── preview.py

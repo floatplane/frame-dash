@@ -29,3 +29,22 @@ configuration:
   weather_entity:
     name: Weather Entity
     description: Home Assistant weather entity ID to use
+  eink_enabled:
+    name: Enable E-Ink Server
+    description: >-
+      Run a BYOS server so a TRMNL X (or compatible e-ink device) can poll for a
+      grayscale version of the dashboard.
+  eink_width:
+    name: E-Ink Width
+    description: Horizontal resolution of the e-ink device in pixels (TRMNL X = 1872)
+  eink_height:
+    name: E-Ink Height
+    description: Vertical resolution of the e-ink device in pixels (TRMNL X = 1404)
+  eink_port:
+    name: E-Ink Server Port
+    description: >-
+      Port the BYOS server listens on. Must match the add-on's exposed port
+      (2300) unless you change the network port mapping too.
+  eink_refresh_rate:
+    name: E-Ink Refresh Rate
+    description: How often the e-ink device should poll for a new image (in seconds)

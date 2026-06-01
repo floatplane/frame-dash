@@ -4,11 +4,13 @@ Uses Playwright (headless Chromium) to render Jinja2-templated HTML
 at the TV's native resolution, then captures a screenshot as PNG.
 """
 
+import io
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
+from PIL import Image
 from playwright.sync_api import sync_playwright
 
 from .config import Config
@@ -56,9 +58,6 @@ class Renderer:
 
     def render(self, data: DashboardData, output_path: str) -> str:
         """Render dashboard data to a PNG file. Returns the output path."""
-        if not self._browser:
-            self.start()
-
         # Render HTML from template
         template = self.env.get_template("base.html.j2")
         html = template.render(
@@ -68,25 +67,51 @@ class Renderer:
             theme=self.config.theme,
         )
 
-        # Use Playwright to screenshot the HTML
-        page = self._browser.new_page(
-            viewport={
-                "width": self.config.tv_width,
-                "height": self.config.tv_height,
-            },
-            device_scale_factor=1,
+        png = self._screenshot(html, self.config.tv_width, self.config.tv_height)
+        Path(output_path).write_bytes(png)
+        logger.info(f"Rendered dashboard to {output_path}")
+        return output_path
+
+    def render_eink(self, data: DashboardData) -> bytes:
+        """Render the e-ink dashboard and return grayscale PNG bytes.
+
+        Renders the dedicated e-ink template at the device's resolution, then
+        converts to 8-bit grayscale. The TRMNL firmware handles quantization to
+        its 16 gray levels (and dithering) on-device.
+        """
+        template = self.env.get_template("eink.html.j2")
+        html = template.render(
+            data=data,
+            config=self.config,
+            now=datetime.now(),
+            theme="eink",
         )
 
+        png = self._screenshot(html, self.config.eink_width, self.config.eink_height)
+
+        # Convert to grayscale for the e-ink panel
+        with Image.open(io.BytesIO(png)) as img:
+            gray = img.convert("L")
+            out = io.BytesIO()
+            gray.save(out, format="PNG")
+            return out.getvalue()
+
+    def _screenshot(self, html: str, width: int, height: int) -> bytes:
+        """Screenshot rendered HTML at the given viewport, returning PNG bytes."""
+        if not self._browser:
+            self.start()
+
+        page = self._browser.new_page(
+            viewport={"width": width, "height": height},
+            device_scale_factor=1,
+        )
         try:
             page.set_content(html, wait_until="networkidle")
             # Brief pause to let any CSS transitions/fonts settle
             page.wait_for_timeout(500)
-            page.screenshot(path=output_path, type="png", full_page=False)
-            logger.info(f"Rendered dashboard to {output_path}")
+            return page.screenshot(type="png", full_page=False)
         finally:
             page.close()
-
-        return output_path
 
     # --- Template filters ---
 

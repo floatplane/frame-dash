@@ -1,0 +1,174 @@
+/* Frame Dash - E-Ink Styles (TRMNL X)
+ *
+ * Designed for a 1872x1404 grayscale e-ink panel viewed at close range
+ * (on a dresser/desk). High contrast pure black-on-white — subtle grays
+ * dither poorly on e-ink, so we lean on weight and size for hierarchy
+ * rather than color. No clock (an infrequently-refreshed panel showing a
+ * stale time is worse than none); a small "updated" footer instead.
+ *
+ * Landscape by default. To flip to portrait, swap width/height in the
+ * render config and change .eink grid-template-* below.
+ */
+
+:root {
+  --bg: #ffffff;
+  --fg: #000000;
+  --fg-muted: #6b6b6b;
+  --divider: #b8b8b8;
+  --attention-bg: #e6e6e6;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Inter", "SF Pro Display", -apple-system, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.eink {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "header   header"
+    "calendar status"
+    "footer   footer";
+  width: 100%;
+  height: 100%;
+  padding: 56px 64px;
+  gap: 32px 56px;
+}
+
+/* ---- Header: date + weather ---- */
+.eink__header {
+  grid-area: header;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 3px solid var(--fg);
+  padding-bottom: 24px;
+}
+
+.eink__date {
+  font-size: 56px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.eink__weather {
+  text-align: right;
+  font-weight: 400;
+}
+
+.eink__weather-temp {
+  font-size: 56px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.eink__weather-meta {
+  font-size: 30px;
+  color: var(--fg-muted);
+  margin-top: 4px;
+}
+
+/* ---- Calendar ---- */
+.eink__calendar {
+  grid-area: calendar;
+  overflow: hidden;
+}
+
+.eink__section-title {
+  font-size: 26px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--fg-muted);
+  margin-bottom: 16px;
+}
+
+.eink__section-title--second {
+  margin-top: 40px;
+}
+
+.eink__events {
+  list-style: none;
+}
+
+.eink__event {
+  display: flex;
+  align-items: baseline;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--divider);
+}
+
+.eink__event:last-child {
+  border-bottom: none;
+}
+
+.eink__event-time {
+  font-size: 30px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  min-width: 200px;
+  flex-shrink: 0;
+}
+
+.eink__event-summary {
+  font-size: 34px;
+  font-weight: 400;
+  color: var(--fg);
+}
+
+.eink__empty {
+  font-size: 30px;
+  color: var(--fg-muted);
+  font-style: italic;
+}
+
+/* ---- Status ---- */
+.eink__status {
+  grid-area: status;
+  overflow: hidden;
+}
+
+.eink__status-items {
+  list-style: none;
+}
+
+.eink__status-item {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--fg);
+  padding: 16px 24px;
+  margin-bottom: 14px;
+  background: var(--attention-bg);
+  border-left: 8px solid var(--fg);
+  border-radius: 4px;
+}
+
+.eink__status-item--climate {
+  background: transparent;
+  border-left: 8px solid var(--divider);
+  font-weight: 400;
+  color: var(--fg-muted);
+}
+
+/* ---- Footer ---- */
+.eink__footer {
+  grid-area: footer;
+  text-align: right;
+  font-size: 24px;
+  color: var(--fg-muted);
+  border-top: 1px solid var(--divider);
+  padding-top: 16px;
+}

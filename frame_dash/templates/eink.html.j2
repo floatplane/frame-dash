@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="eink">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width={{ config.eink_width }}, height={{ config.eink_height }}">
+  <style>
+    {# Inline the CSS so Playwright can render without serving static files #}
+    {% include "static/eink.css" %}
+  </style>
+</head>
+<body>
+  <div class="eink">
+
+    {# ---- Header: date + weather ---- #}
+    <div class="eink__header">
+      <div class="eink__date">{{ now.strftime("%A, %B %-d") }}</div>
+      {% if data.weather %}
+      <div class="eink__weather">
+        <div class="eink__weather-temp">
+          {{ data.weather.temperature | temp_fmt(data.weather.temperature_unit) }}
+          · {{ data.weather.condition | replace("-", " ") | title }}
+        </div>
+        {% if data.weather.temp_high is not none and data.weather.temp_low is not none %}
+        <div class="eink__weather-meta">
+          High {{ data.weather.temp_high | temp_fmt(data.weather.temperature_unit) }}
+          · Low {{ data.weather.temp_low | temp_fmt(data.weather.temperature_unit) }}
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    {# ---- Calendar (Today + Tomorrow) ---- #}
+    <div class="eink__calendar">
+      <div class="eink__section-title">Today</div>
+      {% if data.events_today %}
+      <ul class="eink__events">
+        {% for event in data.events_today %}
+        <li class="eink__event">
+          <span class="eink__event-time">{{ event.time_str }}</span>
+          <span class="eink__event-summary">{{ event.summary }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="eink__empty">Nothing scheduled</div>
+      {% endif %}
+
+      {% if data.events_tomorrow %}
+      <div class="eink__section-title eink__section-title--second">Tomorrow</div>
+      <ul class="eink__events">
+        {% for event in data.events_tomorrow %}
+        <li class="eink__event">
+          <span class="eink__event-time">{{ event.time_str }}</span>
+          <span class="eink__event-summary">{{ event.summary }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+
+    {# ---- Status (attention + climate) ---- #}
+    <div class="eink__status">
+      {% if data.attention_items %}
+      <ul class="eink__status-items">
+        {% for item in data.attention_items %}
+        <li class="eink__status-item">
+          {% if item.domain == "sensor" and "," in item.state %}
+            {{ item.state.split(",", 1)[1] | trim }}
+          {% elif item.domain == "lock" and item.state == "unlocked" %}
+            {{ item.friendly_name }} unlocked
+          {% elif item.domain == "light" and item.state == "on" %}
+            {{ item.friendly_name }} on
+          {% elif item.domain == "binary_sensor" %}
+            {{ item.friendly_name }} open
+          {% else %}
+            {{ item.friendly_name }}: {{ item.state }}
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if data.climate_states %}
+      <ul class="eink__status-items" style="margin-top: 24px;">
+        {% for item in data.climate_states %}
+        <li class="eink__status-item eink__status-item--climate">
+          {% if item.domain == "climate" %}
+            {{ item.friendly_name }}:
+            {{ item.attributes.get("current_temperature", item.state) }}°
+            → {{ item.attributes.get("temperature", "?") }}°
+          {% elif item.domain == "sensor" %}
+            {{ item.friendly_name }}: {{ item.state }}{{ item.attributes.get("unit_of_measurement", "") }}
+          {% else %}
+            {{ item.friendly_name }}: {{ item.state }}
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+
+    {# ---- Footer: last updated ---- #}
+    <div class="eink__footer">
+      Updated {{ now.strftime("%-I:%M %p") }}
+    </div>
+
+  </div>
+</body>
+</html>

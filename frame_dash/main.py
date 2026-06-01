@@ -9,6 +9,7 @@ import sys
 import time
 from pathlib import Path
 
+from .byos import BYOSServer
 from .config import Config
 from .ha_client import HAClient
 from .renderer import Renderer
@@ -28,6 +29,7 @@ def run_once(
     renderer: Renderer,
     samsung: SamsungFrameClient | None,
     output_path: str,
+    byos: BYOSServer | None = None,
 ) -> bool:
     """Execute a single fetch → render → push cycle.
 
@@ -46,6 +48,15 @@ def run_once(
         # 2. Render to PNG
         logger.info("Rendering dashboard...")
         renderer.render(data, output_path)
+
+        # 2b. Render the e-ink image and hand it to the BYOS server
+        if byos is not None:
+            try:
+                png = renderer.render_eink(data)
+                byos.update_image(png)
+                logger.info(f"Updated e-ink image ({len(png)} bytes)")
+            except Exception as e:
+                logger.error(f"E-ink render failed: {e}", exc_info=True)
 
         # 3. Push to Samsung Frame (if configured)
         if samsung and config.samsung_tv_ip:
@@ -96,11 +107,25 @@ def main():
     logger.info(f"  Update interval: {config.update_interval}s")
     logger.info(f"  Calendars: {config.calendars}")
     logger.info(f"  Theme: {config.theme}")
+    if config.eink_enabled:
+        logger.info(
+            f"  E-ink: enabled, serving on :{config.eink_port} "
+            f"at {config.eink_width}x{config.eink_height}"
+        )
 
     # Initialize components
     ha_client = HAClient(config)
     renderer = Renderer(config)
     renderer.start()
+
+    byos = None
+    if config.eink_enabled:
+        byos = BYOSServer(
+            port=config.eink_port,
+            refresh_rate=config.eink_refresh_rate,
+            data_dir=config.data_dir,
+        )
+        byos.start()
 
     samsung = None
     if not args.render_only and config.samsung_tv_ip:
@@ -114,7 +139,9 @@ def main():
     try:
         if args.once:
             # Single run
-            success = run_once(config, ha_client, renderer, samsung, output_path)
+            success = run_once(
+                config, ha_client, renderer, samsung, output_path, byos=byos
+            )
             sys.exit(0 if success else 1)
         else:
             # Continuous loop
@@ -123,7 +150,9 @@ def main():
             max_failures = 10
 
             while True:
-                success = run_once(config, ha_client, renderer, samsung, output_path)
+                success = run_once(
+                    config, ha_client, renderer, samsung, output_path, byos=byos
+                )
 
                 if success:
                     consecutive_failures = 0
@@ -149,6 +178,8 @@ def main():
     except KeyboardInterrupt:
         logger.info("Shutting down...")
     finally:
+        if byos is not None:
+            byos.stop()
         renderer.stop()
         ha_client.close()
 
