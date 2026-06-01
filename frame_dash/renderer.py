@@ -1,12 +1,12 @@
-"""Render the dashboard HTML template to a PNG image.
+"""Render the dashboard HTML template to a grayscale PNG for the e-ink display.
 
-Uses Playwright (headless Chromium) to render Jinja2-templated HTML
-at the TV's native resolution, then captures a screenshot as PNG.
+Uses Playwright (headless Chromium) to render the Jinja2-templated HTML at the
+TRMNL X's native resolution, screenshots it, then converts to grayscale.
 """
 
 import io
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
@@ -22,7 +22,7 @@ TEMPLATE_DIR = Path(__file__).parent / "templates"
 
 
 class Renderer:
-    """Renders dashboard data to a PNG image."""
+    """Renders dashboard data to a grayscale PNG image for the e-ink panel."""
 
     def __init__(self, config: Config):
         self.config = config
@@ -31,10 +31,7 @@ class Renderer:
             autoescape=True,
         )
         # Register custom filters
-        self.env.filters["time_fmt"] = self._time_fmt
         self.env.filters["temp_fmt"] = self._temp_fmt
-        self.env.filters["weather_icon"] = self._weather_icon
-        self.env.filters["status_icon"] = self._status_icon
 
         self._playwright = None
         self._browser = None
@@ -56,35 +53,18 @@ class Renderer:
             self._playwright.stop()
         logger.info("Playwright browser stopped")
 
-    def render(self, data: DashboardData, output_path: str) -> str:
-        """Render dashboard data to a PNG file. Returns the output path."""
-        # Render HTML from template
-        template = self.env.get_template("base.html.j2")
-        html = template.render(
-            data=data,
-            config=self.config,
-            now=datetime.now(),
-            theme=self.config.theme,
-        )
-
-        png = self._screenshot(html, self.config.tv_width, self.config.tv_height)
-        Path(output_path).write_bytes(png)
-        logger.info(f"Rendered dashboard to {output_path}")
-        return output_path
-
     def render_eink(self, data: DashboardData) -> bytes:
         """Render the e-ink dashboard and return grayscale PNG bytes.
 
-        Renders the dedicated e-ink template at the device's resolution, then
-        converts to 8-bit grayscale. The TRMNL firmware handles quantization to
-        its 16 gray levels (and dithering) on-device.
+        Renders the e-ink template at the device's resolution, then converts to
+        8-bit grayscale. The TRMNL firmware handles quantization to its 16 gray
+        levels (and dithering) on-device.
         """
         template = self.env.get_template("eink.html.j2")
         html = template.render(
             data=data,
             config=self.config,
             now=datetime.now(),
-            theme="eink",
         )
 
         png = self._screenshot(html, self.config.eink_width, self.config.eink_height)
@@ -116,63 +96,6 @@ class Renderer:
     # --- Template filters ---
 
     @staticmethod
-    def _time_fmt(dt: datetime) -> str:
-        """Format a datetime as a human-readable time string."""
-        if not isinstance(dt, datetime):
-            return str(dt)
-        return dt.strftime("%-I:%M %p").lower().replace(" ", "\u2009")
-
-    @staticmethod
     def _temp_fmt(temp: float, unit: str = "°F") -> str:
         """Format a temperature value."""
         return f"{temp:.0f}{unit}"
-
-    @staticmethod
-    def _weather_icon(condition: str) -> str:
-        """Map HA weather condition to an emoji/icon."""
-        icons = {
-            "clear-night": "🌙",
-            "cloudy": "☁️",
-            "fog": "🌫️",
-            "hail": "🌨️",
-            "lightning": "⚡",
-            "lightning-rainy": "⛈️",
-            "partlycloudy": "⛅",
-            "pouring": "🌧️",
-            "rainy": "🌦️",
-            "snowy": "❄️",
-            "snowy-rainy": "🌨️",
-            "sunny": "☀️",
-            "windy": "💨",
-            "windy-variant": "💨",
-            "exceptional": "⚠️",
-        }
-        return icons.get(condition, "🌡️")
-
-    @staticmethod
-    def _status_icon(entity_state) -> str:
-        """Return an appropriate icon for an attention item."""
-        domain = entity_state.domain
-        state = entity_state.state
-
-        if domain == "lock":
-            return "🔓" if state == "unlocked" else "🔒"
-        if domain == "binary_sensor":
-            device_class = entity_state.attributes.get("device_class", "")
-            if device_class == "garage_door":
-                return "🏠"  # garage
-            if device_class in ("door", "opening"):
-                return "🚪"
-            if device_class in ("moisture", "water"):
-                return "💧"
-            return "⚠️"
-        if domain == "light":
-            return "💡"
-        if domain == "sensor":
-            # Timeframe-style CSV: "icon_name,Label"
-            parts = state.split(",", 1)
-            if len(parts) == 2:
-                return parts[0].strip()
-            return "📊"
-
-        return "⚠️"

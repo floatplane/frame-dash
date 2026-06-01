@@ -1,19 +1,12 @@
 # Frame Dash - Standalone Configuration
-# Copy this to config.yaml and edit for your setup.
+# Copy this to local.yaml and edit for your setup.
 
 # Home Assistant connection (not needed when running as HA add-on)
 ha_url: "http://homeassistant.local:8123"
 ha_token: "YOUR_LONG_LIVED_ACCESS_TOKEN_HERE"
 
-# Samsung Frame TV
-samsung_tv_ip: "192.168.1.100"
-
-# Update interval in seconds
+# How often to re-render the dashboard, in seconds
 update_interval: 300
-
-# TV resolution (3840x2160 for 4K, 1920x1080 for 1080p)
-tv_width: 3840
-tv_height: 2160
 
 # Calendar entity IDs
 calendars:
@@ -40,8 +33,12 @@ watched_entities:
     - binary_sensor.washer
     - binary_sensor.dryer
 
-# Display
-theme: "light"  # "light" or "dark"
-show_clock: true
+# Weather
 show_weather: true
 weather_entity: "weather.home"
+
+# E-ink display (TRMNL X)
+eink_width: 1872
+eink_height: 1404
+eink_port: 2300
+eink_refresh_rate: 300  # how often the device polls, in seconds

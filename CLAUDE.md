@@ -2,7 +2,7 @@
 
 ## What is this?
 
-Frame Dash is a Home Assistant add-on that renders a calm, minimal family dashboard as a PNG and pushes it to a Samsung The Frame TV via the art mode API. It runs as a Docker container inside HA OS.
+Frame Dash is a Home Assistant add-on that renders a calm, minimal family dashboard as a grayscale PNG and serves it to a TRMNL X e-ink display over the TRMNL "BYOS" (build-your-own-server) protocol. It runs as a Docker container inside HA OS.
 
 Inspired by [Timeframe](https://github.com/joelhawksley/timeframe) by Joel Hawksley ([blog post](https://hawksley.org/2026/02/17/timeframe.html)). The core philosophy borrowed from that project: **only show what needs attention right now; silence means the house is healthy.**
 
@@ -11,8 +11,8 @@ Inspired by [Timeframe](https://github.com/joelhawksley/timeframe) by Joel Hawks
 The main loop in `frame_dash/main.py` runs a cycle every N seconds (default 300):
 
 1. **Fetch** — `ha_client.py` calls the HA REST API for calendar events, entity states, and weather
-2. **Render** — `renderer.py` uses Jinja2 to fill an HTML template, then Playwright (headless Chromium) screenshots it to a PNG at the TV's native resolution
-3. **Push** — `samsung.py` uploads the PNG to the Frame TV via the `samsungtvws` library's art mode API, selects it as current art, and deletes the previous image to avoid filling TV storage
+2. **Render** — `renderer.py` uses Jinja2 to fill the HTML template, then Playwright (headless Chromium) screenshots it and Pillow converts it to a grayscale PNG at the device's native resolution
+3. **Serve** — `byos.py` runs an HTTP server implementing the TRMNL BYOS device API. The device polls `/api/display` on its own schedule and downloads the latest image
 
 When running as an HA add-on, the `SUPERVISOR_TOKEN` env var provides API access automatically. For standalone dev, a long-lived access token is configured in `local.yaml`.
 
@@ -20,13 +20,13 @@ When running as an HA add-on, the `SUPERVISOR_TOKEN` env var provides API access
 
 ```
 frame-dash/
-├── config.yaml              # HA add-on metadata (name, slug, options schema)
+├── config.yaml              # HA add-on metadata (name, slug, options schema, port)
 ├── build.yaml               # Base images per architecture (Debian bookworm)
 ├── Dockerfile               # Add-on container — Debian-based for Playwright compat
 ├── run.sh                   # Add-on entry point (bashio wrapper → Python)
-├── pyproject.toml           # Python deps: playwright, samsungtvws, jinja2, httpx, pyyaml, pillow
+├── pyproject.toml           # Python deps: playwright, jinja2, httpx, pyyaml, pillow
 ├── uv.lock                  # Locked dependency versions
-├── preview.py               # Local preview script (fake data, no HA/TV needed)
+├── preview.py               # Local preview script (fake data, no HA/device needed)
 ├── local.example.yaml       # Standalone dev config template
 ├── repository.yaml          # HA add-on repo metadata
 ├── translations/en.yaml     # Config option descriptions for HA UI
@@ -35,14 +35,11 @@ frame-dash/
 │   ├── main.py              # CLI entry point + main loop
 │   ├── config.py            # Config loading (HA add-on JSON or standalone YAML)
 │   ├── ha_client.py         # HA REST API client (calendars, states, weather)
-│   ├── renderer.py          # Jinja2 + Playwright HTML→PNG rendering (render + render_eink)
-│   ├── samsung.py           # Samsung Frame TV art mode push via samsungtvws
-│   ├── byos.py              # BYOS HTTP server for TRMNL X e-ink devices
+│   ├── renderer.py          # Jinja2 + Playwright HTML→grayscale PNG rendering
+│   ├── byos.py              # BYOS HTTP server for the TRMNL X e-ink device
 │   └── templates/
-│       ├── base.html.j2     # Main TV dashboard template
-│       ├── eink.html.j2     # E-ink (TRMNL X) dashboard template
+│       ├── eink.html.j2     # E-ink dashboard template
 │       └── static/
-│           ├── style.css    # TV dashboard styles (light/dark themes)
 │           └── eink.css     # E-ink grayscale styles (black-on-white)
 └── README.md
 ```
@@ -50,9 +47,9 @@ frame-dash/
 ## Key dependencies
 
 - **playwright** — headless Chromium for HTML→PNG. Requires Debian (not Alpine) due to glibc. The Dockerfile installs it with `playwright install --with-deps chromium`.
-- **samsungtvws** — Python wrapper for Samsung TV WebSocket API. Art mode methods: `upload()`, `select_image()`, `delete()`, `get_artmode()`, `set_artmode()`. Auth token persisted to `/data/samsung-tv-token.txt`.
+- **pillow** — converts the screenshot to 8-bit grayscale for the e-ink panel.
 - **httpx** — HTTP client for HA REST API calls.
-- **jinja2** — HTML template rendering with custom filters for time formatting, weather icons, status icons.
+- **jinja2** — HTML template rendering with a `temp_fmt` custom filter.
 
 ## Running locally for development
 
@@ -60,47 +57,46 @@ frame-dash/
 uv sync
 uv run playwright install chromium
 
-# Preview with fake data — no HA or TV needed
+# Preview with fake data — no HA or device needed
 python preview.py           # HTML, opens in browser
-python preview.py --png     # PNG at TV resolution
+python preview.py --png     # grayscale PNG at device resolution
 
 # Full cycle against real HA (needs local.yaml)
 cp local.example.yaml local.yaml
-# Edit local.yaml with your HA URL, token, TV IP
+# Edit local.yaml with your HA URL and token
 uv run python -m frame_dash.main --once
 ```
 
 ## Design decisions to know about
 
 - **HTML rendering, not canvas/SVG** — we render a full HTML page to PNG via Playwright. This means the dashboard layout is just CSS. Heavyweight but extremely flexible.
-- **Single-image slot on TV** — each push cycle uploads a new image, selects it, deletes the old one. This prevents the TV's ~4GB internal storage from filling up. The `_previous_image_id` is tracked in memory (lost on restart, but cleanup logic handles orphans).
+- **Embedded BYOS server** — `byos.py` is a small threaded HTTP server implementing TRMNL's BYOS device API (`/api/setup`, `/api/display`, `/api/log`, `/images/<hash>.png`). It auto-registers devices, persists the MAC→api_key registry to `/data/byos-devices.json`, builds `image_url` from the request `Host` header, and serves a content-hashed filename so the device only re-downloads when the image actually changes.
+- **Grayscale render** — `render_eink()` screenshots the template and converts to 8-bit grayscale via Pillow; the TRMNL firmware handles the 16-level quantize/dither on-device.
+- **No clock on the panel** — an e-ink display refreshes infrequently, so a clock showing a stale time would be worse than none. The template instead shows a small "Updated HH:MM" footer.
 - **Attention-only status** — doors/locks/lights are only shown when they're in a "problem" state (unlocked, open, on). The `EntityState.is_problem` property in `ha_client.py` defines this logic per domain.
 - **Climate always shown** — entities in the `climate` watched list are always displayed, not just when problematic.
 - **Timeframe-style sensors** — supports HA template sensors using the `"icon,Label"` CSV format from Timeframe. Any `sensor.timeframe_*` entity with this format gets rendered as a status item.
-- **E-ink via embedded BYOS server** — when `eink_enabled`, the add-on runs a small HTTP server (`byos.py`) implementing TRMNL's BYOS device API (`/api/setup`, `/api/display`, `/api/log`, `/images/<hash>.png`). The device polls it and displays a grayscale render of a separate, simplified template (`eink.html.j2`) — landscape, black-on-white, no clock (an infrequently-refreshed panel showing a stale time is worse than none), with an "Updated HH:MM" footer. `render_eink()` converts to 8-bit grayscale via Pillow; the firmware handles the 16-level quantize/dither. The same fetched `DashboardData` feeds both the TV and e-ink renders.
 
 ## Open tasks and known gaps
 
 ### Must do before first real use
-- [ ] **Determine Brian's Samsung Frame model year** — art mode API works reliably on 2020-2021 models. 2022+ may have restrictions. Test with `tv.art().supported()`.
+- [ ] **Confirm how the TRMNL X is pointed at a custom server** — app config vs. flashing custom firmware. This is the main on-device unknown.
+- [ ] **Verify grayscale output on the physical device** — tune dithering (server-side Floyd–Steinberg vs. letting the firmware do it) if it looks muddy.
 - [ ] **Fill in actual HA entity IDs** — the local.example.yaml has placeholder entities. Need real lock, light, climate, calendar entity IDs from Brian's HA instance.
-- [ ] **Test the samsungtvws upload→select→delete cycle** — the `samsung.py` cleanup logic needs real-device testing. The `upload()` return value (image ID) format may vary by TV model.
 - [ ] **Font loading in Playwright** — the Dockerfile installs `fonts-inter` but the CSS falls back to system-ui. Verify Inter actually renders in the headless Chromium screenshot. May need to embed fonts via @font-face with base64.
 
 ### Should do
-- [ ] **HA webhook for instant updates** — instead of only polling every N seconds, register an HA automation that hits a webhook when watched entity states change (door unlocks, laundry finishes). The add-on would need to expose an HTTP endpoint.
-- [ ] **Graceful degradation** — if HA API is unreachable, render a cached version with a stale-data indicator. If the TV is off/unreachable, skip push and don't error.
-- [ ] **Image diffing** — don't push to TV if the rendered PNG is identical to the last one (hash comparison). Reduces unnecessary TV API calls.
+- [ ] **HA webhook for instant updates** — instead of only polling every N seconds, register an HA automation that hits a webhook when watched entity states change (door unlocks, laundry finishes).
+- [ ] **Graceful degradation** — if HA API is unreachable, keep serving the last good image rather than erroring.
 - [ ] **Multi-day calendar view** — current template shows today + tomorrow. Could show the next 3-5 days in a more compact format.
 - [ ] **Energy usage display** — Brian has solar (Enphase) and tracks energy. Could add a simple energy production/consumption indicator to the status area.
 - [ ] **Sonos now-playing** — Timeframe shows current Sonos track. Brian has a Sonos setup. Could add a `media_player.*` entity watcher.
+- [ ] **Portrait orientation option** — currently landscape; the template/CSS are structured to flip if the device sits portrait on the stand.
 
 ### Nice to have
-- [ ] **Web preview endpoint** — serve the dashboard HTML on a local port so you can preview it in a browser during development without running Playwright.
 - [ ] **Template hot-reload** — watch the templates directory and re-render on change during development.
 - [ ] **Alternative to Playwright** — Playwright + Chromium adds ~500MB to the Docker image. Could explore `wkhtmltoimage` or `weasyprint` for lighter-weight HTML→PNG, but they have worse CSS support.
-- [ ] **Multiple display support** — different layouts for different TVs/displays (e.g., a bedroom Frame showing just tomorrow's early events and weather).
-- [ ] **Dark mode auto-switch** — switch between light/dark theme based on time of day or HA sun entity.
+- [ ] **Multiple display support** — different layouts for different e-ink panels.
 
 ## Brian's home context
 
@@ -108,7 +104,6 @@ uv run python -m frame_dash.main --once
 - Runs Home Assistant with Lutron Caséta (Smart Bridge 2), Navien hydronic heating, Enphase solar
 - Has a Sonos audio system
 - Has a `~/projects/casadeloso` directory for HA-related projects (Python, uv-managed)
-- The Frame TV model year is unknown — needs to be checked
 
 ## Style and conventions
 

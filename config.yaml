@@ -1,6 +1,6 @@
 name: "Frame Dash"
-description: "Renders a calm family dashboard and pushes it to a Samsung Frame TV via Art Mode"
-version: "0.2.0"
+description: "Renders a calm family dashboard and serves it to a TRMNL X e-ink display"
+version: "0.3.0"
 slug: "frame-dash"
 url: "https://github.com/floatplane/frame-dash"
 arch:
@@ -16,13 +16,9 @@ map:
 ports:
   2300/tcp: 2300
 ports_description:
-  2300/tcp: "BYOS server for e-ink devices (TRMNL X). Point the device here."
+  2300/tcp: "BYOS server for the TRMNL X e-ink display. Point the device here."
 options:
-  samsung_tv_ip: ""
-  samsung_tv_entity: ""
   update_interval: 300
-  tv_width: 3840
-  tv_height: 2160
   calendars:
     - "calendar.family"
   watched_entities:
@@ -30,21 +26,14 @@ options:
     lights: []
     climate: []
     alerts: []
-  theme: "light"
-  show_clock: true
   show_weather: true
   weather_entity: "weather.home"
-  eink_enabled: false
   eink_width: 1872
   eink_height: 1404
   eink_port: 2300
   eink_refresh_rate: 300
 schema:
-  samsung_tv_ip: str
-  samsung_tv_entity: str?
   update_interval: int
-  tv_width: int
-  tv_height: int
   calendars:
     - str
   watched_entities:
@@ -56,11 +45,8 @@ schema:
       - str
     alerts:
       - str
-  theme: "list(light|dark)"
-  show_clock: bool
   show_weather: bool
   weather_entity: str
-  eink_enabled: bool
   eink_width: int
   eink_height: int
   eink_port: int

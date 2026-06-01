@@ -1,14 +1,14 @@
 # Frame Dash
 
-A Home Assistant add-on that renders a calm, minimal family dashboard and pushes it to a Samsung The Frame TV via Art Mode.
+A Home Assistant add-on that renders a calm, minimal family dashboard and serves it to a [TRMNL X](https://shop.trmnl.com/products/trmnl-x) e-ink display.
 
 Inspired by [Timeframe](https://github.com/joelhawksley/timeframe) by Joel Hawksley.
 
 ## Philosophy
 
-The goal is **not** to replicate a Home Assistant dashboard on your TV. Instead, Frame Dash follows the principle of **ambient awareness**: show only what matters right now, and let silence mean everything is fine.
+The goal is **not** to replicate a Home Assistant dashboard. Instead, Frame Dash follows the principle of **ambient awareness**: show only what matters right now, and let silence mean everything is fine.
 
-- **Calendar**: Today's events and tomorrow's early events
+- **Calendar**: Today's events and tomorrow's events
 - **Home status**: Only surfaces _problems_ — unlocked doors, lights left on, unusual energy usage
 - **Climate**: Current indoor/outdoor conditions
 - **Alerts**: Laundry done, garage open, anything that needs attention
@@ -29,19 +29,18 @@ If the status area is empty, your home is healthy.
 │  │     - Entity states (doors, lights,   │  │
 │  │       climate, energy, sensors)       │  │
 │  │                                       │  │
-│  │  2. Render HTML → PNG                 │  │
-│  │     - Jinja2 templates               │  │
+│  │  2. Render HTML → grayscale PNG       │  │
+│  │     - Jinja2 template                 │  │
 │  │     - Playwright/Chromium headless    │  │
-│  │     - Output at TV native resolution  │  │
+│  │     - Output at device resolution     │  │
 │  │                                       │  │
-│  │  3. Push to Samsung Frame             │  │
-│  │     - samsungtvws art mode API        │  │
-│  │     - Upload PNG, select, cleanup     │  │
+│  │  3. Serve via BYOS HTTP server        │  │
+│  │     - /api/setup, /api/display, ...   │  │
+│  │     - Device polls and displays it    │  │
 │  └───────────────────────────────────────┘  │
-│                        │                    │
-│                        ▼                    │
-│              Samsung The Frame TV           │
-│              (Art Mode / LAN)               │
+│                        ▲                    │
+│                        │ LAN poll           │
+│                  TRMNL X (e-ink)            │
 └─────────────────────────────────────────────┘
 ```
 
@@ -56,21 +55,14 @@ In Home Assistant, go to **Settings → Apps → App store → ⋮ → Repositor
 Install "Frame Dash" from the app store, then configure it:
 
 ```yaml
-# Samsung Frame TV IP (set a static IP on your TV first)
-samsung_tv_ip: "192.168.1.100"
-
 # Home Assistant long-lived access token
 # (Settings → People → [your user] → Security → Long-Lived Access Tokens)
 # Note: When running as an add-on, SUPERVISOR_TOKEN is used automatically.
 # This is only needed for standalone/development use.
 ha_token: ""
 
-# Update interval in seconds (300 = 5 minutes)
+# How often to re-render the dashboard, in seconds (300 = 5 minutes)
 update_interval: 300
-
-# TV resolution
-tv_width: 3840
-tv_height: 2160
 
 # Calendar entity IDs to display
 calendars:
@@ -94,53 +86,27 @@ watched_entities:
     - binary_sensor.washer
     - binary_sensor.dryer
 
-# Display settings
-theme: "light"  # "light" or "dark"
-show_clock: true
+# Weather
 show_weather: true
 weather_entity: "weather.home"
 
-# E-ink display (TRMNL X) — optional
-eink_enabled: false
+# E-ink display (TRMNL X)
 eink_width: 1872
 eink_height: 1404
 eink_port: 2300
 eink_refresh_rate: 300  # how often the device polls, in seconds
 ```
 
-### 3. Samsung Frame TV setup
+### 3. TRMNL X setup
 
-1. Set a **static IP** for your Frame TV in your router
-2. On first run, the TV will show a permission prompt — **accept it**
-3. The add-on will upload a dashboard image and set it as the current art
+Frame Dash serves the dashboard to the TRMNL X over its "BYOS" (build-your-own-server) protocol.
 
-### 4. Verify your TV model
-
-The art mode API works reliably with 2020-2021 Frame TVs. Support for 2022+ models varies. Test with:
-
-```bash
-uvx --from samsungtvws python -c "
-from samsungtvws import SamsungTVWS
-tv = SamsungTVWS('YOUR_TV_IP')
-print(tv.art().supported())
-"
-```
-
-### 5. E-ink display (TRMNL X) — optional
-
-Frame Dash can also serve a grayscale version of the dashboard to a
-[TRMNL X](https://shop.trmnl.com/products/trmnl-x) (or compatible) e-ink panel
-over its "BYOS" (build-your-own-server) protocol — useful for a calmer,
-always-on display on a dresser or desk.
-
-1. Set `eink_enabled: true` and restart the add-on.
-2. The add-on serves the BYOS API at `http://<home-assistant-ip>:2300`.
-3. Point the TRMNL X at that base URL as its server. The device registers
+1. Start the add-on. It serves the BYOS API at `http://<home-assistant-ip>:2300`.
+2. Point the TRMNL X at that base URL as its server. The device registers
    itself (`/api/setup`), then polls `/api/display` every `eink_refresh_rate`
    seconds and displays the returned grayscale image.
 
-The e-ink layout is a separate, simplified template (`eink.html.j2`): landscape,
-high-contrast black-on-white, no clock, with a small "Updated HH:MM" footer.
+The layout (`eink.html.j2`) is landscape, high-contrast black-on-white, with no clock and a small "Updated HH:MM" footer — an infrequently-refreshed e-ink panel showing a stale clock would be worse than none.
 
 ## Development
 
@@ -148,7 +114,7 @@ high-contrast black-on-white, no clock, with a small "Updated HH:MM" footer.
 
 ```bash
 # Clone and install
-git clone https://github.com/YOUR_USER/frame-dash.git
+git clone https://github.com/floatplane/frame-dash.git
 cd frame-dash
 
 # Install dependencies
@@ -157,23 +123,20 @@ uv run playwright install chromium
 
 # Copy and edit config
 cp local.example.yaml local.yaml
-# Edit local.yaml with your HA URL, token, TV IP
+# Edit local.yaml with your HA URL and token
 
-# Run once (renders and pushes)
+# Run once (renders and serves)
 uv run python -m frame_dash.main --once
 
 # Run as daemon
 uv run python -m frame_dash.main
 ```
 
-### Local preview (no HA or TV needed)
+### Local preview (no HA or device needed)
 
 ```bash
-uv run python preview.py            # renders preview.html, opens in browser
-uv run python preview.py --png      # renders preview.png at TV resolution via Playwright
-uv run python preview.py --dark     # dark theme
-uv run python preview.py --eink         # renders the e-ink layout (HTML)
-uv run python preview.py --eink --png   # renders grayscale e-ink PNG at device resolution
+uv run python preview.py          # renders preview.html, opens in browser
+uv run python preview.py --png    # renders grayscale preview.png at device resolution
 ```
 
 ## Project Structure
@@ -185,17 +148,14 @@ frame-dash/
 ├── run.sh               # Add-on entry point
 ├── frame_dash/
 │   ├── __init__.py
-│   ├── main.py          # Main loop: fetch → render → push
+│   ├── main.py          # Main loop: fetch → render → serve
 │   ├── config.py        # Configuration loading
 │   ├── ha_client.py     # Home Assistant REST API client
-│   ├── renderer.py      # HTML → PNG rendering via Playwright
-│   ├── samsung.py       # Samsung Frame art mode push
-│   ├── byos.py          # BYOS server for TRMNL X e-ink devices
+│   ├── renderer.py      # HTML → grayscale PNG rendering via Playwright
+│   ├── byos.py          # BYOS server for the TRMNL X e-ink device
 │   └── templates/
-│       ├── base.html.j2       # Main TV dashboard template
-│       ├── eink.html.j2       # E-ink (TRMNL X) dashboard template
+│       ├── eink.html.j2       # E-ink dashboard template
 │       └── static/
-│           ├── style.css      # TV styles
 │           └── eink.css       # E-ink grayscale styles
 ├── pyproject.toml
 ├── uv.lock

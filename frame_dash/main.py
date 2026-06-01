@@ -1,6 +1,8 @@
 """Main entry point for Frame Dash.
 
-Orchestrates the fetch → render → push loop.
+Orchestrates the fetch → render → serve loop: pulls data from Home Assistant,
+renders a grayscale dashboard, and serves it to a TRMNL X e-ink device via the
+embedded BYOS server.
 """
 
 import argparse
@@ -13,7 +15,6 @@ from .byos import BYOSServer
 from .config import Config
 from .ha_client import HAClient
 from .renderer import Renderer
-from .samsung import SamsungFrameClient
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,14 +25,12 @@ logger = logging.getLogger("frame_dash")
 
 
 def run_once(
-    config: Config,
     ha_client: HAClient,
     renderer: Renderer,
-    samsung: SamsungFrameClient | None,
-    output_path: str,
-    byos: BYOSServer | None = None,
+    byos: BYOSServer,
+    output_path: str | None = None,
 ) -> bool:
-    """Execute a single fetch → render → push cycle.
+    """Execute a single fetch → render → serve cycle.
 
     Returns True if successful.
     """
@@ -45,28 +44,18 @@ def run_once(
             f"{len(data.attention_items)} attention items"
         )
 
-        # 2. Render to PNG
+        # 2. Render the grayscale e-ink image
         logger.info("Rendering dashboard...")
-        renderer.render(data, output_path)
+        png = renderer.render_eink(data)
 
-        # 2b. Render the e-ink image and hand it to the BYOS server
-        if byos is not None:
-            try:
-                png = renderer.render_eink(data)
-                byos.update_image(png)
-                logger.info(f"Updated e-ink image ({len(png)} bytes)")
-            except Exception as e:
-                logger.error(f"E-ink render failed: {e}", exc_info=True)
+        # 3. Hand it to the BYOS server for the device to poll
+        byos.update_image(png)
+        logger.info(f"Updated e-ink image ({len(png)} bytes)")
 
-        # 3. Push to Samsung Frame (if configured)
-        if samsung and config.samsung_tv_ip:
-            logger.info("Pushing to Samsung Frame TV...")
-            success = samsung.push_image(output_path, ha_client=ha_client)
-            if not success:
-                logger.warning("Failed to push to TV — will retry next cycle")
-                return False
-        else:
-            logger.info(f"Render-only mode. Dashboard saved to {output_path}")
+        # 4. Optionally write a copy to disk (debugging / --once inspection)
+        if output_path:
+            Path(output_path).write_bytes(png)
+            logger.info(f"Wrote image to {output_path}")
 
         return True
 
@@ -83,65 +72,38 @@ def main():
         help="Run a single update cycle and exit",
     )
     parser.add_argument(
-        "--render-only",
-        action="store_true",
-        help="Only render the dashboard (don't push to TV)",
-    )
-    parser.add_argument(
         "--output",
         default=None,
-        help="Output path for rendered PNG (default: {data_dir}/dashboard.png)",
+        help="Also write the rendered PNG to this path",
     )
     args = parser.parse_args()
 
     # Load configuration
     config = Config.load()
-    output_path = args.output or f"{config.data_dir}/dashboard.png"
-
-    # Ensure output directory exists
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
     logger.info("Frame Dash starting")
-    logger.info(f"  TV IP: {config.samsung_tv_ip or '(render-only)'}")
-    logger.info(f"  Resolution: {config.tv_width}x{config.tv_height}")
+    logger.info(f"  Serving on :{config.eink_port}")
+    logger.info(f"  Resolution: {config.eink_width}x{config.eink_height}")
     logger.info(f"  Update interval: {config.update_interval}s")
+    logger.info(f"  Refresh rate: {config.eink_refresh_rate}s")
     logger.info(f"  Calendars: {config.calendars}")
-    logger.info(f"  Theme: {config.theme}")
-    if config.eink_enabled:
-        logger.info(
-            f"  E-ink: enabled, serving on :{config.eink_port} "
-            f"at {config.eink_width}x{config.eink_height}"
-        )
 
     # Initialize components
     ha_client = HAClient(config)
     renderer = Renderer(config)
     renderer.start()
 
-    byos = None
-    if config.eink_enabled:
-        byos = BYOSServer(
-            port=config.eink_port,
-            refresh_rate=config.eink_refresh_rate,
-            data_dir=config.data_dir,
-        )
-        byos.start()
-
-    samsung = None
-    if not args.render_only and config.samsung_tv_ip:
-        samsung = SamsungFrameClient(config)
-        if not samsung.check_supported():
-            logger.warning(
-                "TV does not report art mode support. "
-                "Will attempt to push anyway — some TVs report incorrectly."
-            )
+    byos = BYOSServer(
+        port=config.eink_port,
+        refresh_rate=config.eink_refresh_rate,
+        data_dir=config.data_dir,
+    )
+    byos.start()
 
     try:
         if args.once:
             # Single run
-            success = run_once(
-                config, ha_client, renderer, samsung, output_path, byos=byos
-            )
+            success = run_once(ha_client, renderer, byos, output_path=args.output)
             sys.exit(0 if success else 1)
         else:
             # Continuous loop
@@ -150,9 +112,7 @@ def main():
             max_failures = 10
 
             while True:
-                success = run_once(
-                    config, ha_client, renderer, samsung, output_path, byos=byos
-                )
+                success = run_once(ha_client, renderer, byos, output_path=args.output)
 
                 if success:
                     consecutive_failures = 0
@@ -178,8 +138,7 @@ def main():
     except KeyboardInterrupt:
         logger.info("Shutting down...")
     finally:
-        if byos is not None:
-            byos.stop()
+        byos.stop()
         renderer.stop()
         ha_client.close()
 

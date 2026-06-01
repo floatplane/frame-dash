@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Local preview script for Frame Dash.
 
-Renders the dashboard with fake data — no Home Assistant connection required.
+Renders the e-ink dashboard with fake data — no Home Assistant connection
+required.
 
 Usage:
     python preview.py           # writes preview.html and opens in browser
-    python preview.py --png     # renders preview.png via Playwright (TV resolution)
-    python preview.py --dark    # dark theme
-    python preview.py --png --dark --output my.png
+    python preview.py --png     # renders grayscale preview.png at device resolution
+    python preview.py --png --output my.png
 """
 
 import argparse
@@ -156,57 +156,40 @@ def fake_data(now: datetime) -> DashboardData:
     )
 
 
-def preview_config(theme: str) -> Config:
+def preview_config() -> Config:
     """Minimal config for rendering."""
     return Config(
-        tv_width=3840,
-        tv_height=2160,
         calendars=["calendar.family", "calendar.home"],
         watched_entities=WatchedEntities(),
-        theme=theme,
-        show_clock=True,
         show_weather=True,
     )
 
 
-def render_html(
-    renderer: Renderer,
-    data: DashboardData,
-    config: Config,
-    output: Path,
-    template_name: str = "base.html.j2",
-):
+def render_html(renderer: Renderer, data: DashboardData, config: Config, output: Path):
     """Write rendered HTML to a file (no Playwright needed)."""
     from jinja2 import Environment, FileSystemLoader
     from frame_dash.renderer import TEMPLATE_DIR
 
     env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)), autoescape=True)
-    env.filters["time_fmt"] = renderer._time_fmt
     env.filters["temp_fmt"] = renderer._temp_fmt
-    env.filters["weather_icon"] = renderer._weather_icon
-    env.filters["status_icon"] = renderer._status_icon
 
-    template = env.get_template(template_name)
+    template = env.get_template("eink.html.j2")
     html = template.render(
         data=data,
         config=config,
         now=datetime.now(),
-        theme="eink" if template_name == "eink.html.j2" else config.theme,
     )
     output.write_text(html)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Preview Frame Dash locally")
-    parser.add_argument("--png", action="store_true", help="Render PNG via Playwright")
-    parser.add_argument("--dark", action="store_true", help="Use dark theme")
-    parser.add_argument("--eink", action="store_true", help="Render the e-ink (TRMNL X) layout")
+    parser.add_argument("--png", action="store_true", help="Render grayscale PNG via Playwright")
     parser.add_argument("--no-attention", action="store_true", help="Hide attention items (clean state)")
     parser.add_argument("--output", "-o", help="Output file path")
     args = parser.parse_args()
 
-    theme = "dark" if args.dark else "light"
-    config = preview_config(theme)
+    config = preview_config()
     now = datetime.now(timezone.utc)
     data = fake_data(now)
 
@@ -216,21 +199,13 @@ def main():
     renderer = Renderer(config)
 
     if args.png:
-        output = Path(args.output or ("preview-eink.png" if args.eink else "preview.png"))
-        if args.eink:
-            print(f"Rendering e-ink PNG ({config.eink_width}x{config.eink_height}, grayscale) → {output}")
-            renderer.start()
-            try:
-                output.write_bytes(renderer.render_eink(data))
-            finally:
-                renderer.stop()
-        else:
-            print(f"Rendering PNG ({config.tv_width}x{config.tv_height}) → {output}")
-            renderer.start()
-            try:
-                renderer.render(data, str(output))
-            finally:
-                renderer.stop()
+        output = Path(args.output or "preview.png")
+        print(f"Rendering e-ink PNG ({config.eink_width}x{config.eink_height}, grayscale) → {output}")
+        renderer.start()
+        try:
+            output.write_bytes(renderer.render_eink(data))
+        finally:
+            renderer.stop()
         print(f"Done. Open {output} to view.")
         # Try to open with default image viewer
         try:
@@ -238,10 +213,9 @@ def main():
         except FileNotFoundError:
             pass
     else:
-        output = Path(args.output or ("preview-eink.html" if args.eink else "preview.html"))
-        template_name = "eink.html.j2" if args.eink else "base.html.j2"
+        output = Path(args.output or "preview.html")
         print(f"Rendering HTML → {output}")
-        render_html(renderer, data, config, output, template_name=template_name)
+        render_html(renderer, data, config, output)
         print(f"Done. Opening {output} in browser...")
         webbrowser.open(output.resolve().as_uri())
 

@@ -28,20 +28,13 @@ class WatchedEntities:
 
 @dataclass
 class Config:
-    samsung_tv_ip: str = ""
-    samsung_tv_entity: str = ""
     update_interval: int = 300
-    tv_width: int = 3840
-    tv_height: int = 2160
     calendars: list[str] = field(default_factory=lambda: ["calendar.family"])
     watched_entities: WatchedEntities = field(default_factory=WatchedEntities)
-    theme: str = "light"
-    show_clock: bool = True
     show_weather: bool = True
     weather_entity: str = "weather.home"
 
     # E-ink (TRMNL X) BYOS server
-    eink_enabled: bool = False
     eink_width: int = 1872
     eink_height: int = 1404
     eink_port: int = 2300
@@ -78,18 +71,11 @@ class Config:
         )
 
         config = cls(
-            samsung_tv_ip=raw.get("samsung_tv_ip", ""),
-            samsung_tv_entity=raw.get("samsung_tv_entity", ""),
             update_interval=raw.get("update_interval", 300),
-            tv_width=raw.get("tv_width", 3840),
-            tv_height=raw.get("tv_height", 2160),
             calendars=raw.get("calendars", ["calendar.family"]),
             watched_entities=watched,
-            theme=raw.get("theme", "light"),
-            show_clock=raw.get("show_clock", True),
             show_weather=raw.get("show_weather", True),
             weather_entity=raw.get("weather_entity", "weather.home"),
-            eink_enabled=raw.get("eink_enabled", False),
             eink_width=raw.get("eink_width", 1872),
             eink_height=raw.get("eink_height", 1404),
             eink_port=raw.get("eink_port", 2300),
