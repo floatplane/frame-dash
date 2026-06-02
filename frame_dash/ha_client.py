@@ -118,9 +118,17 @@ class HAClient:
             return []
 
     def get_calendar_events(
-        self, calendar_id: str, start: datetime, end: datetime
+        self,
+        calendar_id: str,
+        start: datetime,
+        end: datetime,
+        calendar_name: str | None = None,
     ) -> list[CalendarEvent]:
-        """Fetch events from a calendar entity."""
+        """Fetch events from a calendar entity.
+
+        `calendar_name` labels each event with which calendar it came from;
+        if not given, it's derived from the entity ID.
+        """
         params = {
             "start": start.isoformat(),
             "end": end.isoformat(),
@@ -128,6 +136,11 @@ class HAClient:
         data = self._get(f"/api/calendars/{calendar_id}", params=params)
         if not isinstance(data, list):
             return []
+
+        # Anchor all-day events to local midnight so they bucket into the correct
+        # day against the local today/tomorrow boundaries (a UTC-midnight anchor
+        # drifts a day in tz's behind UTC).
+        local_tz = datetime.now().astimezone().tzinfo
 
         events = []
         for item in data:
@@ -137,8 +150,8 @@ class HAClient:
             # All-day events have "date", timed events have "dateTime"
             all_day = "date" in start_raw
             if all_day:
-                evt_start = datetime.fromisoformat(start_raw["date"]).replace(tzinfo=timezone.utc)
-                evt_end = datetime.fromisoformat(end_raw["date"]).replace(tzinfo=timezone.utc)
+                evt_start = datetime.fromisoformat(start_raw["date"]).replace(tzinfo=local_tz)
+                evt_end = datetime.fromisoformat(end_raw["date"]).replace(tzinfo=local_tz)
             else:
                 evt_start = datetime.fromisoformat(start_raw["dateTime"])
                 evt_end = datetime.fromisoformat(end_raw["dateTime"])
@@ -147,8 +160,10 @@ class HAClient:
                 if evt_end.tzinfo is None:
                     evt_end = evt_end.replace(tzinfo=timezone.utc)
 
-            # Get a friendly name for the calendar
-            cal_name = calendar_id.replace("calendar.", "").replace("_", " ").title()
+            # Label each event with its calendar's name
+            cal_name = calendar_name or (
+                calendar_id.replace("calendar.", "").replace("_", " ").title()
+            )
 
             events.append(CalendarEvent(
                 summary=item.get("summary", ""),
@@ -221,16 +236,31 @@ class HAClient:
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         tomorrow_end = today_start + timedelta(days=2)
 
-        # Fetch calendar events
+        # Fetch calendar events, labeling each with its calendar's display name
         all_events: list[CalendarEvent] = []
         for cal_id in self.config.calendars:
-            events = self.get_calendar_events(cal_id, today_start, tomorrow_end)
+            cal_state = self.get_entity_state(cal_id)
+            cal_name = cal_state.friendly_name if cal_state else None
+            events = self.get_calendar_events(
+                cal_id, today_start, tomorrow_end, calendar_name=cal_name
+            )
             all_events.extend(events)
 
-        # Split into today/tomorrow
+        # Split into today/tomorrow by start, then sort each by time across all
+        # calendars (all-day events first, then timed events ascending) so events
+        # from different calendars are interleaved rather than grouped by calendar.
+        # All-day starts are local midnight, so a pure start comparison buckets
+        # them into the right day with no double-counting.
         tomorrow_start = today_start + timedelta(days=1)
-        events_today = [e for e in all_events if e.start < tomorrow_start or e.all_day]
-        events_tomorrow = [e for e in all_events if e.start >= tomorrow_start]
+        sort_key = lambda e: (not e.all_day, e.start)  # noqa: E731
+        events_today = sorted(
+            (e for e in all_events if e.start < tomorrow_start),
+            key=sort_key,
+        )
+        events_tomorrow = sorted(
+            (e for e in all_events if e.start >= tomorrow_start),
+            key=sort_key,
+        )
 
         # Fetch all watched entity states
         all_states: dict[str, EntityState] = {}

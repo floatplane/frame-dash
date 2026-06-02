@@ -39,6 +39,9 @@
         <li class="eink__event">
           <span class="eink__event-time">{{ event.time_str }}</span>
           <span class="eink__event-summary">{{ event.summary }}</span>
+          {% if config.calendars | length > 1 %}
+          <span class="eink__event-calendar">{{ event.calendar_name }}</span>
+          {% endif %}
         </li>
         {% endfor %}
       </ul>
@@ -53,6 +56,9 @@
         <li class="eink__event">
           <span class="eink__event-time">{{ event.time_str }}</span>
           <span class="eink__event-summary">{{ event.summary }}</span>
+          {% if config.calendars | length > 1 %}
+          <span class="eink__event-calendar">{{ event.calendar_name }}</span>
+          {% endif %}
         </li>
         {% endfor %}
       </ul>

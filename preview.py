@@ -35,7 +35,23 @@ def fake_data(now: datetime) -> DashboardData:
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
     tomorrow = today + timedelta(days=1)
 
+    # Multi-calendar, interleaved by time (all-day first, then ascending) —
+    # mirrors what HAClient.fetch_dashboard_data now produces.
     events_today = [
+        CalendarEvent(
+            summary="Garbage day",
+            start=today,
+            end=today + timedelta(days=1),
+            all_day=True,
+            calendar_name="Home",
+        ),
+        CalendarEvent(
+            summary="Standup",
+            start=today.replace(hour=8, minute=30),
+            end=today.replace(hour=9, minute=0),
+            all_day=False,
+            calendar_name="Work",
+        ),
         CalendarEvent(
             summary="Dentist — Brian",
             start=today.replace(hour=9, minute=0),
@@ -44,18 +60,18 @@ def fake_data(now: datetime) -> DashboardData:
             calendar_name="Family",
         ),
         CalendarEvent(
+            summary="Lunch with Sam",
+            start=today.replace(hour=12, minute=0),
+            end=today.replace(hour=13, minute=0),
+            all_day=False,
+            calendar_name="Work",
+        ),
+        CalendarEvent(
             summary="School pickup",
             start=today.replace(hour=15, minute=15),
             end=today.replace(hour=15, minute=45),
             all_day=False,
             calendar_name="Family",
-        ),
-        CalendarEvent(
-            summary="Garbage day",
-            start=today,
-            end=today + timedelta(days=1),
-            all_day=True,
-            calendar_name="Home",
         ),
     ]
 
@@ -66,6 +82,13 @@ def fake_data(now: datetime) -> DashboardData:
             end=tomorrow.replace(hour=8, minute=30),
             all_day=False,
             calendar_name="Family",
+        ),
+        CalendarEvent(
+            summary="1:1 with manager",
+            start=tomorrow.replace(hour=9, minute=0),
+            end=tomorrow.replace(hour=9, minute=30),
+            all_day=False,
+            calendar_name="Work",
         ),
         CalendarEvent(
             summary="Groceries",

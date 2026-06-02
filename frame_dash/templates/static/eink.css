@@ -129,6 +129,14 @@ html, body {
   color: var(--fg);
 }
 
+.eink__event-calendar {
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--fg-muted);
+  margin-left: 16px;
+  flex-shrink: 0;
+}
+
 .eink__empty {
   font-size: 30px;
   color: var(--fg-muted);
