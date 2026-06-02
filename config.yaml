@@ -1,6 +1,6 @@
 name: "Frame Dash"
 description: "Renders a calm family dashboard and serves it to a TRMNL X e-ink display"
-version: "0.3.0"
+version: "0.3.1"
 slug: "frame-dash"
 url: "https://github.com/floatplane/frame-dash"
 arch:
@@ -31,7 +31,6 @@ options:
   eink_width: 1872
   eink_height: 1404
   eink_port: 2300
-  eink_refresh_rate: 300
 schema:
   update_interval: int
   calendars:
@@ -50,4 +49,3 @@ schema:
   eink_width: int
   eink_height: int
   eink_port: int
-  eink_refresh_rate: int

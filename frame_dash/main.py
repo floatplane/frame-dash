@@ -84,8 +84,7 @@ def main():
     logger.info("Frame Dash starting")
     logger.info(f"  Serving on :{config.eink_port}")
     logger.info(f"  Resolution: {config.eink_width}x{config.eink_height}")
-    logger.info(f"  Update interval: {config.update_interval}s")
-    logger.info(f"  Refresh rate: {config.eink_refresh_rate}s")
+    logger.info(f"  Update interval: {config.update_interval}s (also the device poll cadence)")
     logger.info(f"  Calendars: {config.calendars}")
 
     # Initialize components
@@ -94,8 +93,10 @@ def main():
     renderer.start()
 
     byos = BYOSServer(
+        # The BYOS refresh_rate (how long the device sleeps between polls) is the
+        # same as our render cadence — no point polling faster than we render.
         port=config.eink_port,
-        refresh_rate=config.eink_refresh_rate,
+        refresh_rate=config.update_interval,
         data_dir=config.data_dir,
     )
     byos.start()

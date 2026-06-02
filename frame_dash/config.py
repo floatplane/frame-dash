@@ -38,7 +38,6 @@ class Config:
     eink_width: int = 1872
     eink_height: int = 1404
     eink_port: int = 2300
-    eink_refresh_rate: int = 300  # seconds the device waits between polls
 
     # Runtime config (not from user options)
     ha_url: str = ""
@@ -79,7 +78,6 @@ class Config:
             eink_width=raw.get("eink_width", 1872),
             eink_height=raw.get("eink_height", 1404),
             eink_port=raw.get("eink_port", 2300),
-            eink_refresh_rate=raw.get("eink_refresh_rate", 300),
             data_dir=os.environ.get("FRAME_DASH_DATA", "/data"),
         )
 

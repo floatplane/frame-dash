@@ -1,7 +1,9 @@
 configuration:
   update_interval:
     name: Update Interval
-    description: How often to re-render the dashboard (in seconds)
+    description: >-
+      How often to re-render the dashboard, in seconds. This is also the cadence
+      the device polls at (and so drives battery life).
   calendars:
     name: Calendars
     description: List of Home Assistant calendar entity IDs to display
@@ -25,6 +27,3 @@ configuration:
     description: >-
       Port the BYOS server listens on. Must match the add-on's exposed port
       (2300) unless you change the network port mapping too.
-  eink_refresh_rate:
-    name: E-Ink Refresh Rate
-    description: How often the e-ink device should poll for a new image (in seconds)

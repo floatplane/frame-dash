@@ -94,7 +94,6 @@ weather_entity: "weather.home"
 eink_width: 1872
 eink_height: 1404
 eink_port: 2300
-eink_refresh_rate: 300  # how often the device polls, in seconds
 ```
 
 ### 3. TRMNL X setup
@@ -103,8 +102,9 @@ Frame Dash serves the dashboard to the TRMNL X over its "BYOS" (build-your-own-s
 
 1. Start the add-on. It serves the BYOS API at `http://<home-assistant-ip>:2300`.
 2. Point the TRMNL X at that base URL as its server. The device registers
-   itself (`/api/setup`), then polls `/api/display` every `eink_refresh_rate`
-   seconds and displays the returned grayscale image.
+   itself (`/api/setup`), then polls `/api/display` and displays the returned
+   grayscale image. The poll cadence is driven by the server (it's the
+   `update_interval` we report back to the device).
 
 The layout (`eink.html.j2`) is landscape, high-contrast black-on-white, with no clock and a small "Updated HH:MM" footer — an infrequently-refreshed e-ink panel showing a stale clock would be worse than none.
 

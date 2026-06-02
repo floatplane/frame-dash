@@ -15,8 +15,9 @@ add-on serves a grayscale dashboard the device polls for. What's built:
   (no emoji, which dither poorly).
 - `renderer.render_eink()` — renders the template and converts to 8-bit
   grayscale PNG via Pillow (firmware handles the 16-level quantize/dither).
-- Config: `eink_width`, `eink_height`, `eink_port` (2300), `eink_refresh_rate`.
-  Port 2300 exposed via `ports:` in config.yaml.
+- Config: `eink_width`, `eink_height`, `eink_port` (2300). Port 2300 exposed via
+  `ports:` in config.yaml. The BYOS `refresh_rate` returned to the device is
+  `update_interval` — one knob for both render cadence and device poll/battery.
 - `preview.py [--png]` to iterate on the layout without the device.
 
 ### Device-side setup (when configuring the physical TRMNL X)
@@ -34,7 +35,8 @@ add-on serves a grayscale dashboard the device polls for. What's built:
 - Verify grayscale output looks good; tune dithering (server-side Floyd–Steinberg
   vs firmware) if it looks muddy.
 - Confirm landscape is the right orientation on the stand; flip template if not.
-- Confirm `refresh_rate` is honored and pick a sensible default vs battery life.
+- Confirm the device honors the server-returned `refresh_rate` (= `update_interval`)
+  and pick a sensible default vs battery life.
 
 ## Device
 

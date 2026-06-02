@@ -5,7 +5,8 @@
 ha_url: "http://homeassistant.local:8123"
 ha_token: "YOUR_LONG_LIVED_ACCESS_TOKEN_HERE"
 
-# How often to re-render the dashboard, in seconds
+# How often to re-render the dashboard, in seconds.
+# This is also the cadence the device polls at (and so drives battery life).
 update_interval: 300
 
 # Calendar entity IDs
@@ -41,4 +42,3 @@ weather_entity: "weather.home"
 eink_width: 1872
 eink_height: 1404
 eink_port: 2300
-eink_refresh_rate: 300  # how often the device polls, in seconds
