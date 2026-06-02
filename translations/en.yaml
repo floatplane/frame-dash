@@ -2,8 +2,8 @@ configuration:
   update_interval:
     name: Update Interval
     description: >-
-      How often to re-render the dashboard, in seconds. This is also the cadence
-      the device polls at (and so drives battery life).
+      How often to re-render and push the dashboard, in seconds. TRMNL caps
+      uploads at 12 per hour, so keep this at 300 or higher (600 = 10 min).
   calendars:
     name: Calendars
     description: List of Home Assistant calendar entity IDs to display
@@ -22,8 +22,8 @@ configuration:
   eink_height:
     name: E-Ink Height
     description: Vertical resolution of the e-ink device in pixels (TRMNL X = 1404)
-  eink_port:
-    name: E-Ink Server Port
+  eink_webhook_url:
+    name: TRMNL Webhook URL
     description: >-
-      Port the BYOS server listens on. Must match the add-on's exposed port
-      (2300) unless you change the network port mapping too.
+      The private URL from your TRMNL "Webhook Image" plugin
+      (Plugins → Webhook Image → Add). Frame Dash POSTs the rendered image here.

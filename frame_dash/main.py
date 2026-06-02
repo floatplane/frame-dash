@@ -1,8 +1,8 @@
 """Main entry point for Frame Dash.
 
-Orchestrates the fetch → render → serve loop: pulls data from Home Assistant,
-renders a grayscale dashboard, and serves it to a TRMNL X e-ink device via the
-embedded BYOS server.
+Orchestrates the fetch → render → push loop: pulls data from Home Assistant,
+renders a grayscale dashboard, and pushes it to a TRMNL Webhook Image plugin so
+it shows up in the device's playlist.
 """
 
 import argparse
@@ -11,7 +11,7 @@ import sys
 import time
 from pathlib import Path
 
-from .byos import BYOSServer
+from . import webhook
 from .config import Config
 from .ha_client import HAClient
 from .renderer import Renderer
@@ -25,14 +25,16 @@ logger = logging.getLogger("frame_dash")
 
 
 def run_once(
+    config: Config,
     ha_client: HAClient,
     renderer: Renderer,
-    byos: BYOSServer,
     output_path: str | None = None,
 ) -> bool:
-    """Execute a single fetch → render → serve cycle.
+    """Execute a single fetch → render → push cycle.
 
-    Returns True if successful.
+    Returns True if the fetch and render succeeded. The webhook push is
+    best-effort and does not fail the cycle (so a rate limit or a flaky network
+    to TRMNL doesn't trigger backoff).
     """
     try:
         # 1. Fetch data from Home Assistant
@@ -47,10 +49,13 @@ def run_once(
         # 2. Render the grayscale e-ink image
         logger.info("Rendering dashboard...")
         png = renderer.render_eink(data)
+        logger.info(f"Rendered e-ink image ({len(png)} bytes)")
 
-        # 3. Hand it to the BYOS server for the device to poll
-        byos.update_image(png)
-        logger.info(f"Updated e-ink image ({len(png)} bytes)")
+        # 3. Push to the TRMNL Webhook Image plugin
+        if config.eink_webhook_url:
+            webhook.push_image(config.eink_webhook_url, png)
+        else:
+            logger.warning("No eink_webhook_url configured — rendered but not pushed")
 
         # 4. Optionally write a copy to disk (debugging / --once inspection)
         if output_path:
@@ -82,9 +87,9 @@ def main():
     config = Config.load()
 
     logger.info("Frame Dash starting")
-    logger.info(f"  Serving on :{config.eink_port}")
     logger.info(f"  Resolution: {config.eink_width}x{config.eink_height}")
-    logger.info(f"  Update interval: {config.update_interval}s (also the device poll cadence)")
+    logger.info(f"  Update interval: {config.update_interval}s")
+    logger.info(f"  Webhook: {'configured' if config.eink_webhook_url else 'NOT configured'}")
     logger.info(f"  Calendars: {config.calendars}")
 
     # Initialize components
@@ -92,19 +97,10 @@ def main():
     renderer = Renderer(config)
     renderer.start()
 
-    byos = BYOSServer(
-        # The BYOS refresh_rate (how long the device sleeps between polls) is the
-        # same as our render cadence — no point polling faster than we render.
-        port=config.eink_port,
-        refresh_rate=config.update_interval,
-        data_dir=config.data_dir,
-    )
-    byos.start()
-
     try:
         if args.once:
             # Single run
-            success = run_once(ha_client, renderer, byos, output_path=args.output)
+            success = run_once(config, ha_client, renderer, output_path=args.output)
             sys.exit(0 if success else 1)
         else:
             # Continuous loop
@@ -113,7 +109,7 @@ def main():
             max_failures = 10
 
             while True:
-                success = run_once(ha_client, renderer, byos, output_path=args.output)
+                success = run_once(config, ha_client, renderer, output_path=args.output)
 
                 if success:
                     consecutive_failures = 0
@@ -139,7 +135,6 @@ def main():
     except KeyboardInterrupt:
         logger.info("Shutting down...")
     finally:
-        byos.stop()
         renderer.stop()
         ha_client.close()
 

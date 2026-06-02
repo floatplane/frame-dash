@@ -1,6 +1,6 @@
 # Frame Dash
 
-A Home Assistant add-on that renders a calm, minimal family dashboard and serves it to a [TRMNL X](https://shop.trmnl.com/products/trmnl-x) e-ink display.
+A Home Assistant add-on that renders a calm, minimal family dashboard and pushes it to a [TRMNL X](https://shop.trmnl.com/products/trmnl-x) e-ink display via a TRMNL [Webhook Image](https://help.trmnl.com/en/articles/13213669-webhook-image) plugin.
 
 Inspired by [Timeframe](https://github.com/joelhawksley/timeframe) by Joel Hawksley.
 
@@ -34,14 +34,15 @@ If the status area is empty, your home is healthy.
 │  │     - Playwright/Chromium headless    │  │
 │  │     - Output at device resolution     │  │
 │  │                                       │  │
-│  │  3. Serve via BYOS HTTP server        │  │
-│  │     - /api/setup, /api/display, ...   │  │
-│  │     - Device polls and displays it    │  │
+│  │  3. POST PNG to TRMNL Webhook Image   │  │
 │  └───────────────────────────────────────┘  │
-│                        ▲                    │
-│                        │ LAN poll           │
-│                  TRMNL X (e-ink)            │
-└─────────────────────────────────────────────┘
+│                        │                    │
+└────────────────────────┼────────────────────┘
+                         ▼
+              TRMNL cloud (Webhook Image plugin)
+                         │  device pulls on its
+                         ▼  playlist schedule
+                  TRMNL X (e-ink)
 ```
 
 ## Setup
@@ -61,8 +62,9 @@ Install "Frame Dash" from the app store, then configure it:
 # This is only needed for standalone/development use.
 ha_token: ""
 
-# How often to re-render the dashboard, in seconds (300 = 5 minutes)
-update_interval: 300
+# How often to re-render and push, in seconds. TRMNL caps uploads at
+# 12/hour, so keep this >= 300 (600 = 10 minutes).
+update_interval: 600
 
 # Calendar entity IDs to display
 calendars:
@@ -93,20 +95,22 @@ weather_entity: "weather.home"
 # E-ink display (TRMNL X)
 eink_width: 1872
 eink_height: 1404
-eink_port: 2300
+
+# Private URL from your TRMNL "Webhook Image" plugin (see step 3)
+eink_webhook_url: ""
 ```
 
-### 3. TRMNL X setup
+### 3. TRMNL setup
 
-Frame Dash serves the dashboard to the TRMNL X over its "BYOS" (build-your-own-server) protocol.
+Frame Dash pushes its rendered image to a TRMNL **Webhook Image** plugin, so it appears as one screen in your device's playlist.
 
-1. Start the add-on. It serves the BYOS API at `http://<home-assistant-ip>:2300`.
-2. Point the TRMNL X at that base URL as its server. The device registers
-   itself (`/api/setup`), then polls `/api/display` and displays the returned
-   grayscale image. The poll cadence is driven by the server (it's the
-   `update_interval` we report back to the device).
+1. In the TRMNL web app, go to **Plugins → Webhook Image → Add**. Copy the private webhook URL it generates.
+2. Paste that URL into the add-on's `eink_webhook_url` option and start the add-on.
+3. Add the Webhook Image plugin to your device's playlist. Frame Dash will POST a fresh image every `update_interval` seconds; the device shows it on its own refresh schedule.
 
 The layout (`eink.html.j2`) is landscape, high-contrast black-on-white, with no clock and a small "Updated HH:MM" footer — an infrequently-refreshed e-ink panel showing a stale clock would be worse than none.
+
+Because delivery is an outbound POST to TRMNL's cloud, the add-on needs no inbound ports and the device doesn't have to be on the same network.
 
 ## Development
 
@@ -125,7 +129,7 @@ uv run playwright install chromium
 cp local.example.yaml local.yaml
 # Edit local.yaml with your HA URL and token
 
-# Run once (renders and serves)
+# Run once (renders and pushes)
 uv run python -m frame_dash.main --once
 
 # Run as daemon
@@ -148,11 +152,11 @@ frame-dash/
 ├── run.sh               # Add-on entry point
 ├── frame_dash/
 │   ├── __init__.py
-│   ├── main.py          # Main loop: fetch → render → serve
+│   ├── main.py          # Main loop: fetch → render → push
 │   ├── config.py        # Configuration loading
 │   ├── ha_client.py     # Home Assistant REST API client
 │   ├── renderer.py      # HTML → grayscale PNG rendering via Playwright
-│   ├── byos.py          # BYOS server for the TRMNL X e-ink device
+│   ├── webhook.py       # Pushes the PNG to the TRMNL Webhook Image plugin
 │   └── templates/
 │       ├── eink.html.j2       # E-ink dashboard template
 │       └── static/

@@ -5,9 +5,9 @@
 ha_url: "http://homeassistant.local:8123"
 ha_token: "YOUR_LONG_LIVED_ACCESS_TOKEN_HERE"
 
-# How often to re-render the dashboard, in seconds.
-# This is also the cadence the device polls at (and so drives battery life).
-update_interval: 300
+# How often to re-render and push the dashboard, in seconds.
+# TRMNL caps uploads at 12/hour, so keep this >= 300 (600 = 10 min).
+update_interval: 600
 
 # Calendar entity IDs
 calendars:
@@ -41,4 +41,5 @@ weather_entity: "weather.home"
 # E-ink display (TRMNL X)
 eink_width: 1872
 eink_height: 1404
-eink_port: 2300
+# Private URL from your TRMNL "Webhook Image" plugin (Plugins → Webhook Image → Add)
+eink_webhook_url: "https://usetrmnl.com/api/custom_plugins/YOUR_UUID"

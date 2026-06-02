@@ -1,6 +1,6 @@
 name: "Frame Dash"
-description: "Renders a calm family dashboard and serves it to a TRMNL X e-ink display"
-version: "0.3.1"
+description: "Renders a calm family dashboard and pushes it to a TRMNL e-ink display via a Webhook Image plugin"
+version: "0.4.0"
 slug: "frame-dash"
 url: "https://github.com/floatplane/frame-dash"
 arch:
@@ -13,12 +13,8 @@ hassio_api: true
 map:
   - type: share
     read_only: false
-ports:
-  2300/tcp: 2300
-ports_description:
-  2300/tcp: "BYOS server for the TRMNL X e-ink display. Point the device here."
 options:
-  update_interval: 300
+  update_interval: 600
   calendars:
     - "calendar.family"
   watched_entities:
@@ -30,7 +26,7 @@ options:
   weather_entity: "weather.home"
   eink_width: 1872
   eink_height: 1404
-  eink_port: 2300
+  eink_webhook_url: ""
 schema:
   update_interval: int
   calendars:
@@ -48,4 +44,4 @@ schema:
   weather_entity: str
   eink_width: int
   eink_height: int
-  eink_port: int
+  eink_webhook_url: password?

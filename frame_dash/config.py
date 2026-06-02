@@ -28,16 +28,16 @@ class WatchedEntities:
 
 @dataclass
 class Config:
-    update_interval: int = 300
+    update_interval: int = 600
     calendars: list[str] = field(default_factory=lambda: ["calendar.family"])
     watched_entities: WatchedEntities = field(default_factory=WatchedEntities)
     show_weather: bool = True
     weather_entity: str = "weather.home"
 
-    # E-ink (TRMNL X) BYOS server
+    # E-ink (TRMNL X) render + TRMNL Webhook Image delivery
     eink_width: int = 1872
     eink_height: int = 1404
-    eink_port: int = 2300
+    eink_webhook_url: str = ""
 
     # Runtime config (not from user options)
     ha_url: str = ""
@@ -70,14 +70,14 @@ class Config:
         )
 
         config = cls(
-            update_interval=raw.get("update_interval", 300),
+            update_interval=raw.get("update_interval", 600),
             calendars=raw.get("calendars", ["calendar.family"]),
             watched_entities=watched,
             show_weather=raw.get("show_weather", True),
             weather_entity=raw.get("weather_entity", "weather.home"),
             eink_width=raw.get("eink_width", 1872),
             eink_height=raw.get("eink_height", 1404),
-            eink_port=raw.get("eink_port", 2300),
+            eink_webhook_url=raw.get("eink_webhook_url", ""),
             data_dir=os.environ.get("FRAME_DASH_DATA", "/data"),
         )
 
