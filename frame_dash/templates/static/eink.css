@@ -99,8 +99,10 @@ html, body {
 }
 
 .wx-icon {
+  /* viewBox has 2 units of vertical padding so tall icons (e.g. lightning)
+     don't clip; width/height keep the same per-unit scale as a 50px square */
   width: 50px;
-  height: 50px;
+  height: 58px;
   display: block;
   fill: none;
   stroke: #000;
@@ -110,15 +112,16 @@ html, body {
 }
 
 .wx-hour__temp {
-  font-size: 32px;
+  font-size: 26px;
   font-weight: 600;
   color: var(--fg);
 }
 
 .wx-hour__precip {
-  font-size: 22px;
+  font-size: 26px;
+  font-weight: 400;
   color: var(--fg-muted);
-  min-height: 28px;
+  min-height: 32px;
 }
 
 /* ---- Calendar ---- */

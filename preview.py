@@ -159,15 +159,15 @@ def fake_data(now: datetime) -> DashboardData:
         ),
     ]
 
-    # Every 2 hours across the day, with a passing afternoon shower
+    # Every 2 hours across the day, with afternoon thunderstorms
     hourly_specs = [
         (8, 52, "partlycloudy", 0),
         (10, 60, "sunny", 0),
-        (12, 64, "sunny", 10),
-        (14, 62, "rainy", 50),
-        (16, 58, "pouring", 60),
-        (18, 54, "cloudy", 30),
-        (20, 49, "cloudy", 10),
+        (12, 64, "cloudy", 13),
+        (14, 68, "lightning-rainy", 39),
+        (16, 68, "lightning-rainy", 51),
+        (18, 65, "lightning-rainy", 38),
+        (20, 59, "rainy", 17),
         (22, 44, "clear-night", 0),
     ]
     hourly = [
