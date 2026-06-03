@@ -70,12 +70,26 @@ class EntityState:
 
 
 @dataclass
+class HourlyForecast:
+    time: datetime
+    temperature: float
+    condition: str
+    precip_probability: float | None = None
+
+    @property
+    def hour_label(self) -> str:
+        # e.g. "8am", "12pm", "10pm"
+        return self.time.strftime("%-I%p").lower()
+
+
+@dataclass
 class WeatherData:
     condition: str  # e.g., "sunny", "cloudy", "rainy"
     temperature: float
     temperature_unit: str  # "°F" or "°C"
     temp_high: float | None = None
     temp_low: float | None = None
+    hourly: list[HourlyForecast] = field(default_factory=list)
 
 
 @dataclass
@@ -88,6 +102,8 @@ class DashboardData:
     climate_states: list[EntityState]
     weather: WeatherData | None
     all_states: dict[str, EntityState]
+    sunrise: datetime | None = None
+    sunset: datetime | None = None
 
 
 class HAClient:
@@ -199,8 +215,9 @@ class HAClient:
         attrs = state.attributes
         temp_high = None
         temp_low = None
+        hourly: list[HourlyForecast] = []
 
-        # Fetch hourly forecast to compute today's high/low
+        # Fetch hourly forecast for today's high/low and the upcoming-hours strip
         try:
             resp = self.client.post(
                 "/api/services/weather/get_forecasts",
@@ -209,7 +226,9 @@ class HAClient:
             )
             resp.raise_for_status()
             forecasts = resp.json().get("service_response", {}).get(entity_id, {}).get("forecast", [])
-            today = datetime.now().astimezone().date()
+
+            now = datetime.now().astimezone()
+            today = now.date()
             today_temps = [
                 f["temperature"]
                 for f in forecasts
@@ -219,6 +238,22 @@ class HAClient:
             if today_temps:
                 temp_high = max(today_temps)
                 temp_low = min(today_temps)
+
+            # 8 entries every 2 hours from the current hour (~16h whole-day view)
+            hour_start = now.replace(minute=0, second=0, microsecond=0)
+            upcoming = [
+                f for f in forecasts
+                if "datetime" in f and "temperature" in f
+                and datetime.fromisoformat(f["datetime"]) >= hour_start
+            ]
+            for f in upcoming[::2][:8]:
+                t = datetime.fromisoformat(f["datetime"])
+                hourly.append(HourlyForecast(
+                    time=t,
+                    temperature=f["temperature"],
+                    condition=f.get("condition", ""),
+                    precip_probability=f.get("precipitation_probability"),
+                ))
         except Exception as e:
             logger.warning(f"Could not fetch hourly forecast for {entity_id}: {e}")
 
@@ -228,6 +263,7 @@ class HAClient:
             temperature_unit=attrs.get("temperature_unit", "°F"),
             temp_high=temp_high,
             temp_low=temp_low,
+            hourly=hourly,
         )
 
     def fetch_dashboard_data(self) -> DashboardData:
@@ -281,6 +317,18 @@ class HAClient:
         if self.config.show_weather:
             weather = self.get_weather(self.config.weather_entity)
 
+        # Fetch sunrise/sunset from the built-in sun entity
+        sunrise = sunset = None
+        sun = self.get_entity_state("sun.sun")
+        if sun:
+            try:
+                if sun.attributes.get("next_rising"):
+                    sunrise = datetime.fromisoformat(sun.attributes["next_rising"]).astimezone()
+                if sun.attributes.get("next_setting"):
+                    sunset = datetime.fromisoformat(sun.attributes["next_setting"]).astimezone()
+            except ValueError:
+                pass
+
         return DashboardData(
             timestamp=now,
             events_today=events_today,
@@ -289,4 +337,6 @@ class HAClient:
             climate_states=climate_states,
             weather=weather,
             all_states=all_states,
+            sunrise=sunrise,
+            sunset=sunset,
         )

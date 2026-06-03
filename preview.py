@@ -25,6 +25,7 @@ from frame_dash.ha_client import (
     CalendarEvent,
     DashboardData,
     EntityState,
+    HourlyForecast,
     WeatherData,
 )
 from frame_dash.renderer import Renderer
@@ -158,12 +159,34 @@ def fake_data(now: datetime) -> DashboardData:
         ),
     ]
 
+    # Every 2 hours across the day, with a passing afternoon shower
+    hourly_specs = [
+        (8, 52, "partlycloudy", 0),
+        (10, 60, "sunny", 0),
+        (12, 64, "sunny", 10),
+        (14, 62, "rainy", 50),
+        (16, 58, "pouring", 60),
+        (18, 54, "cloudy", 30),
+        (20, 49, "cloudy", 10),
+        (22, 44, "clear-night", 0),
+    ]
+    hourly = [
+        HourlyForecast(
+            time=today.replace(hour=hr),
+            temperature=float(temp),
+            condition=cond,
+            precip_probability=precip,
+        )
+        for hr, temp, cond, precip in hourly_specs
+    ]
+
     weather = WeatherData(
         condition="partlycloudy",
         temperature=52.0,
         temperature_unit="°F",
         temp_high=64.0,
         temp_low=31.0,
+        hourly=hourly,
     )
 
     all_states = {e.entity_id: e for e in attention_items + climate_states}
@@ -176,6 +199,10 @@ def fake_data(now: datetime) -> DashboardData:
         climate_states=climate_states,
         weather=weather,
         all_states=all_states,
+        # Daytime demo: today's sunrise already passed, so the next rising is
+        # tomorrow's — which makes today's sunset the proximate event.
+        sunrise=tomorrow.replace(hour=5, minute=58),
+        sunset=today.replace(hour=20, minute=21),
     )
 
 

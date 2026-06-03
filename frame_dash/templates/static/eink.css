@@ -48,14 +48,19 @@ html, body {
   gap: 32px 56px;
 }
 
-/* ---- Header: date + weather ---- */
+/* ---- Header: date + hourly forecast ---- */
 .eink__header {
   grid-area: header;
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   border-bottom: 3px solid var(--fg);
   padding-bottom: 24px;
+}
+
+.eink__header-left {
+  display: flex;
+  flex-direction: column;
 }
 
 .eink__date {
@@ -64,21 +69,56 @@ html, body {
   color: var(--fg);
 }
 
-.eink__weather {
-  text-align: right;
-  font-weight: 400;
+.eink__sun {
+  font-size: 28px;
+  color: var(--fg-muted);
+  margin-top: 10px;
 }
 
-.eink__weather-temp {
-  font-size: 56px;
+/* ---- Hourly forecast strip ---- */
+.wx-hours {
+  display: flex;
+  gap: 4px;
+}
+
+.wx-hour {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 116px;
+}
+
+.wx-hour__time {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--fg-muted);
+}
+
+.wx-hour__icon {
+  margin: 8px 0;
+}
+
+.wx-icon {
+  width: 50px;
+  height: 50px;
+  display: block;
+  fill: none;
+  stroke: #000;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wx-hour__temp {
+  font-size: 32px;
   font-weight: 600;
   color: var(--fg);
 }
 
-.eink__weather-meta {
-  font-size: 30px;
+.wx-hour__precip {
+  font-size: 22px;
   color: var(--fg-muted);
-  margin-top: 4px;
+  min-height: 28px;
 }
 
 /* ---- Calendar ---- */
@@ -108,11 +148,6 @@ html, body {
   display: flex;
   align-items: baseline;
   padding: 12px 0;
-  border-bottom: 1px solid var(--divider);
-}
-
-.eink__event:last-child {
-  border-bottom: none;
 }
 
 .eink__event-time {
