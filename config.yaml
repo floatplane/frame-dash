@@ -1,6 +1,6 @@
 name: "Frame Dash"
 description: "Renders a calm family dashboard and pushes it to a TRMNL e-ink display via a Webhook Image plugin"
-version: "0.7.0"
+version: "0.7.1"
 slug: "frame-dash"
 url: "https://github.com/floatplane/frame-dash"
 arch:

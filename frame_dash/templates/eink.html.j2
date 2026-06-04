@@ -84,10 +84,7 @@
         {% for event in data.events_today %}
         <li class="eink__event">
           <span class="eink__event-time">{{ event.time_str }}</span>
-          <span class="eink__event-summary">{{ event.summary }}</span>
-          {% if config.calendars | length > 1 %}
-          <span class="eink__event-calendar">{{ event.calendar_name }}</span>
-          {% endif %}
+          <span class="eink__event-body"><span class="eink__event-summary">{{ event.summary }}</span>{% if config.calendars | length > 1 %} <span class="eink__event-calendar">{{ event.calendar_name }}</span>{% endif %}</span>
         </li>
         {% endfor %}
       </ul>
@@ -101,10 +98,7 @@
         {% for event in data.events_tomorrow %}
         <li class="eink__event">
           <span class="eink__event-time">{{ event.time_str }}</span>
-          <span class="eink__event-summary">{{ event.summary }}</span>
-          {% if config.calendars | length > 1 %}
-          <span class="eink__event-calendar">{{ event.calendar_name }}</span>
-          {% endif %}
+          <span class="eink__event-body"><span class="eink__event-summary">{{ event.summary }}</span>{% if config.calendars | length > 1 %} <span class="eink__event-calendar">{{ event.calendar_name }}</span>{% endif %}</span>
         </li>
         {% endfor %}
       </ul>

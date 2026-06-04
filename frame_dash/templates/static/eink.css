@@ -161,6 +161,11 @@ html, body {
   flex-shrink: 0;
 }
 
+.eink__event-body {
+  flex: 1;
+  min-width: 0;
+}
+
 .eink__event-summary {
   font-size: 34px;
   font-weight: 400;
@@ -171,8 +176,7 @@ html, body {
   font-size: 22px;
   font-weight: 400;
   color: var(--fg-muted);
-  margin-left: 16px;
-  flex-shrink: 0;
+  margin-left: 4px;
 }
 
 .eink__empty {
