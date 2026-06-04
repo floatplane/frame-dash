@@ -142,9 +142,27 @@
       {% endif %}
     </div>
 
-    {# ---- Footer: last updated ---- #}
+    {# ---- Bottom strip: ambient stats + last updated ---- #}
     <div class="eink__footer">
-      Updated {{ now.strftime("%-I:%M %p") }}
+      <div class="eink__stats">
+        {% if data.vehicle %}
+        <div class="eink__vehicle">
+          <div class="eink__stat-label">{{ data.vehicle.name }}</div>
+          <div class="eink__vehicle-row">
+            {% if data.vehicle.charging %}
+            <svg class="batt-bolt" viewBox="0 0 24 24"><path d="M14 1 L5 13 H11 L10 23 L19 11 H13 Z"/></svg>
+            {% endif %}
+            {% if data.vehicle.battery is not none %}
+            <span class="batt">
+              <span class="batt__fill" style="width: {{ data.vehicle.battery | round | int }}%"></span>
+            </span>
+            {% endif %}
+            <span class="eink__vehicle-range">{% if data.vehicle.range is not none %}{{ data.vehicle.range | round | int }} {{ data.vehicle.range_unit }}{% else %}—{% endif %}</span>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      <div class="eink__updated">Updated {{ now.strftime("%-I:%M %p") }}</div>
     </div>
 
   </div>

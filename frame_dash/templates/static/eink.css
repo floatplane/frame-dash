@@ -209,12 +209,83 @@ html, body {
   color: var(--fg-muted);
 }
 
-/* ---- Footer ---- */
+/* ---- Bottom strip: ambient stats + last updated ---- */
 .eink__footer {
   grid-area: footer;
-  text-align: right;
-  font-size: 24px;
-  color: var(--fg-muted);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
   border-top: 1px solid var(--divider);
   padding-top: 16px;
+}
+
+.eink__stats {
+  display: flex;
+  gap: 56px;
+}
+
+.eink__stat-label {
+  font-size: 20px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--fg-muted);
+}
+
+.eink__vehicle-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.eink__vehicle-range {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+/* Battery glyph: outline body + nub, CSS-width fill, optional charging bolt */
+.batt {
+  position: relative;
+  display: inline-block;
+  width: 56px;
+  height: 28px;
+  border: 3px solid var(--fg);
+  border-radius: 5px;
+  padding: 3px;
+  box-sizing: border-box;
+}
+
+.batt::after {
+  content: "";
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 12px;
+  background: var(--fg);
+  border-radius: 0 2px 2px 0;
+}
+
+.batt__fill {
+  display: block;
+  height: 100%;
+  background: var(--fg);
+  border-radius: 1px;
+}
+
+/* Charging bolt — standalone, to the left of the battery (solid black on white) */
+.batt-bolt {
+  display: block;
+  width: 20px;
+  height: 32px;
+  fill: var(--fg);
+  stroke-linejoin: round;
+}
+
+.eink__updated {
+  font-size: 24px;
+  color: var(--fg-muted);
 }

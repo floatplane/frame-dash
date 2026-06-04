@@ -34,6 +34,18 @@ class Config:
     show_weather: bool = True
     weather_entity: str = "weather.home"
 
+    # Low-battery scan (auto-discovers all battery entities)
+    low_battery_enabled: bool = True
+    low_battery_threshold: int = 20
+    battery_exclude: list[str] = field(default_factory=list)
+
+    # Vehicle widget (e.g. an EV like a Rivian). Empty range entity = hidden.
+    vehicle_name: str = ""
+    vehicle_range_entity: str = ""
+    vehicle_battery_entity: str = ""
+    vehicle_charging_entity: str = ""
+    vehicle_plugged_entity: str = ""
+
     # E-ink (TRMNL X) render + TRMNL Webhook Image delivery
     eink_width: int = 1872
     eink_height: int = 1404
@@ -75,6 +87,9 @@ class Config:
             watched_entities=watched,
             show_weather=raw.get("show_weather", True),
             weather_entity=raw.get("weather_entity", "weather.home"),
+            low_battery_enabled=raw.get("low_battery_enabled", True),
+            low_battery_threshold=raw.get("low_battery_threshold", 20),
+            battery_exclude=raw.get("battery_exclude", []),
             eink_width=raw.get("eink_width", 1872),
             eink_height=raw.get("eink_height", 1404),
             eink_webhook_url=raw.get("eink_webhook_url", ""),

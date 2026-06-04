@@ -93,6 +93,24 @@ class WeatherData:
 
 
 @dataclass
+class VehicleData:
+    name: str
+    range: float | None
+    range_unit: str
+    battery: float | None = None
+    charging: bool = False
+    plugged_in: bool = False
+
+    @property
+    def charge_status(self) -> str:
+        if self.charging:
+            return "Charging"
+        if self.plugged_in:
+            return "Plugged in"
+        return "Unplugged"
+
+
+@dataclass
 class DashboardData:
     """All data needed to render a single frame of the dashboard."""
     timestamp: datetime
@@ -104,6 +122,7 @@ class DashboardData:
     all_states: dict[str, EntityState]
     sunrise: datetime | None = None
     sunset: datetime | None = None
+    vehicle: VehicleData | None = None
 
 
 class HAClient:
@@ -266,6 +285,100 @@ class HAClient:
             hourly=hourly,
         )
 
+    @staticmethod
+    def _strip_battery_suffix(name: str) -> str:
+        """Trim a trailing 'Battery'/'Battery Level' so labels read cleanly."""
+        for suffix in (" battery level", " battery"):
+            if name.lower().endswith(suffix):
+                return name[: -len(suffix)].strip()
+        return name
+
+    def get_low_battery(self, threshold: int, exclude: list[str]) -> EntityState | None:
+        """Scan all battery entities; return a synthetic status item if any are low.
+
+        Catches numeric battery sensors (0 <= level < threshold) and battery
+        binary_sensors (on = low). Entities whose id or friendly name contains
+        any `exclude` substring are skipped. Returns None if nothing is low.
+        """
+        data = self._get("/api/states")
+        if not isinstance(data, list):
+            return None
+
+        exclude_lc = [x.lower() for x in exclude]
+        items: list[tuple[float, str]] = []  # (level for sorting, label)
+        for st in data:
+            if not isinstance(st, dict):
+                continue
+            attrs = st.get("attributes", {})
+            if attrs.get("device_class") != "battery":
+                continue
+
+            entity_id = st.get("entity_id", "")
+            name = attrs.get("friendly_name", entity_id)
+            if any(x in entity_id.lower() or x in name.lower() for x in exclude_lc):
+                continue
+
+            label_name = self._strip_battery_suffix(name)
+            if entity_id.split(".")[0] == "binary_sensor":
+                if st.get("state") == "on":  # on = low for battery device_class
+                    items.append((0.0, f"{label_name} low"))
+            else:
+                try:
+                    level = float(st.get("state"))
+                except (TypeError, ValueError):
+                    continue
+                if 0 <= level < threshold:
+                    items.append((level, f"{label_name} {level:.0f}%"))
+
+        if not items:
+            return None
+
+        items.sort(key=lambda x: x[0])  # lowest battery first
+        summary = " · ".join(label for _, label in items)
+        # Timeframe-style "icon,Label" so the existing status renderer picks it up
+        return EntityState(
+            entity_id="sensor.frame_dash_low_battery",
+            state=f"🔋,Low battery: {summary}",
+            friendly_name="Low battery",
+        )
+
+    def get_vehicle(self) -> VehicleData | None:
+        """Build the vehicle widget data from the configured entities."""
+        cfg = self.config
+        if not cfg.vehicle_range_entity:
+            return None
+        rng = self.get_entity_state(cfg.vehicle_range_entity)
+        if rng is None:
+            return None
+
+        def num(state: EntityState | None) -> float | None:
+            if state is None:
+                return None
+            try:
+                return float(state.state)
+            except (TypeError, ValueError):
+                return None
+
+        battery = num(self.get_entity_state(cfg.vehicle_battery_entity)) \
+            if cfg.vehicle_battery_entity else None
+        charging = False
+        if cfg.vehicle_charging_entity:
+            c = self.get_entity_state(cfg.vehicle_charging_entity)
+            charging = bool(c and c.state == "on")
+        plugged = False
+        if cfg.vehicle_plugged_entity:
+            p = self.get_entity_state(cfg.vehicle_plugged_entity)
+            plugged = bool(p and p.state == "on")
+
+        return VehicleData(
+            name=cfg.vehicle_name or rng.friendly_name,
+            range=num(rng),
+            range_unit=rng.attributes.get("unit_of_measurement", "mi"),
+            battery=battery,
+            charging=charging,
+            plugged_in=plugged,
+        )
+
     def fetch_dashboard_data(self) -> DashboardData:
         """Fetch all data needed for a dashboard render."""
         now = datetime.now().astimezone()
@@ -312,6 +425,16 @@ class HAClient:
                 elif state.is_problem:
                     attention_items.append(state)
 
+        # Low-battery scan across all battery entities (one synthetic item).
+        # Exclude the vehicle's battery — the vehicle widget already covers it.
+        if self.config.low_battery_enabled:
+            exclude = list(self.config.battery_exclude)
+            if self.config.vehicle_battery_entity:
+                exclude.append(self.config.vehicle_battery_entity)
+            low_batt = self.get_low_battery(self.config.low_battery_threshold, exclude)
+            if low_batt:
+                attention_items.append(low_batt)
+
         # Fetch weather
         weather = None
         if self.config.show_weather:
@@ -339,4 +462,5 @@ class HAClient:
             all_states=all_states,
             sunrise=sunrise,
             sunset=sunset,
+            vehicle=self.get_vehicle(),
         )

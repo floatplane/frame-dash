@@ -16,6 +16,35 @@ configuration:
   weather_entity:
     name: Weather Entity
     description: Home Assistant weather entity ID to use
+  low_battery_enabled:
+    name: Low Battery Alerts
+    description: >-
+      Surface devices whose battery is low. Auto-scans every battery entity in
+      Home Assistant (numeric % sensors and low-battery binary sensors).
+  low_battery_threshold:
+    name: Low Battery Threshold
+    description: Battery percentage below which a device is flagged as low (default 20).
+  battery_exclude:
+    name: Battery Exclusions
+    description: >-
+      Entity IDs or name fragments to ignore in low-battery alerts (e.g. phones,
+      watches). Case-insensitive substring match.
+  vehicle_name:
+    name: Vehicle Name
+    description: Label for the vehicle stat in the bottom strip (e.g. SKADI).
+  vehicle_range_entity:
+    name: Vehicle Range Entity
+    description: >-
+      Estimated range sensor. Leave blank to hide the vehicle stats entirely.
+  vehicle_battery_entity:
+    name: Vehicle Battery Entity
+    description: Battery state-of-charge sensor (also excluded from low-battery alerts).
+  vehicle_charging_entity:
+    name: Vehicle Charging Entity
+    description: Binary sensor that is "on" while the vehicle is charging.
+  vehicle_plugged_entity:
+    name: Vehicle Plugged-In Entity
+    description: Binary sensor that is "on" while the charger is connected.
   eink_width:
     name: E-Ink Width
     description: Horizontal resolution of the e-ink device in pixels (TRMNL X = 1872)

@@ -38,6 +38,18 @@ watched_entities:
 show_weather: true
 weather_entity: "weather.home"
 
+# Low-battery alerts (auto-scans all battery entities)
+low_battery_enabled: true
+low_battery_threshold: 20
+battery_exclude: []  # e.g. ["iphone", "watch"] to ignore phones/watches
+
+# Vehicle stats in the bottom strip (leave vehicle_range_entity blank to hide)
+vehicle_name: "SKADI"
+vehicle_range_entity: "sensor.skadi_estimated_vehicle_range"
+vehicle_battery_entity: "sensor.skadi_battery_state_of_charge"
+vehicle_charging_entity: "binary_sensor.skadi_charging_status"
+vehicle_plugged_entity: "binary_sensor.skadi_charger_connection"
+
 # E-ink display (TRMNL X)
 eink_width: 1872
 eink_height: 1404

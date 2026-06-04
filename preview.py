@@ -26,6 +26,7 @@ from frame_dash.ha_client import (
     DashboardData,
     EntityState,
     HourlyForecast,
+    VehicleData,
     WeatherData,
 )
 from frame_dash.renderer import Renderer
@@ -133,6 +134,12 @@ def fake_data(now: datetime) -> DashboardData:
             friendly_name="Laundry",
             attributes={},
         ),
+        EntityState(
+            entity_id="sensor.frame_dash_low_battery",
+            state="🔋,Low battery: Front Lock 12% · Master Shade low",
+            friendly_name="Low battery",
+            attributes={},
+        ),
     ]
 
     # Climate — always shown
@@ -203,6 +210,14 @@ def fake_data(now: datetime) -> DashboardData:
         # tomorrow's — which makes today's sunset the proximate event.
         sunrise=tomorrow.replace(hour=5, minute=58),
         sunset=today.replace(hour=20, minute=21),
+        vehicle=VehicleData(
+            name="SKADI",
+            range=268.0,
+            range_unit="mi",
+            battery=72.0,
+            charging=True,
+            plugged_in=True,
+        ),
     )
 
 
