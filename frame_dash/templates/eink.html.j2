@@ -107,8 +107,8 @@
       <ul class="eink__status-items">
         {% for item in data.attention_items %}
         <li class="eink__status-item">
-          {% if item.domain == "sensor" and "," in item.state %}
-            {{ item.state.split(",", 1)[1] | trim }}
+          {% if item.domain == "sensor" %}
+            {{ item.state }}
           {% elif item.domain == "lock" and item.state == "unlocked" %}
             {{ item.friendly_name }} unlocked
           {% elif item.domain == "light" and item.state == "on" %}

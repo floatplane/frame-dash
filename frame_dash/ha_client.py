@@ -63,8 +63,13 @@ class EntityState:
             # Not really a "problem" — always show climate info
             return True
         if domain == "sensor":
-            # Sensors with timeframe-style CSV format: "icon,Label"
-            return bool(self.state and self.state != "unknown" and "," in self.state)
+            # An alert/status sensor is shown when it has a non-empty label;
+            # the state text IS the label. Templates output "" to hide it.
+            return bool(
+                self.state
+                and self.state.strip()
+                and self.state not in ("unknown", "unavailable")
+            )
 
         return False
 
@@ -335,10 +340,10 @@ class HAClient:
 
         items.sort(key=lambda x: x[0])  # lowest battery first
         summary = " · ".join(label for _, label in items)
-        # Timeframe-style "icon,Label" so the existing status renderer picks it up
+        # A sensor with a non-empty state renders as a status item (state = label)
         return EntityState(
             entity_id="sensor.frame_dash_low_battery",
-            state=f"🔋,Low battery: {summary}",
+            state=f"Low battery: {summary}",
             friendly_name="Low battery",
         )
 

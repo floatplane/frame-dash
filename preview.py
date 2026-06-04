@@ -130,13 +130,13 @@ def fake_data(now: datetime) -> DashboardData:
         ),
         EntityState(
             entity_id="sensor.timeframe_laundry",
-            state="🧺, Laundry done",
+            state="Laundry done",
             friendly_name="Laundry",
             attributes={},
         ),
         EntityState(
             entity_id="sensor.frame_dash_low_battery",
-            state="🔋,Low battery: Front Lock 12% · Master Shade low",
+            state="Low battery: Front Lock 12% · Master Shade low",
             friendly_name="Low battery",
             attributes={},
         ),
