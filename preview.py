@@ -118,10 +118,10 @@ def fake_data(now: datetime) -> DashboardData:
             attributes={"device_class": "lock"},
         ),
         EntityState(
-            entity_id="binary_sensor.garage_door",
-            state="on",
-            friendly_name="Garage Door",
-            attributes={"device_class": "garage_door"},
+            entity_id="cover.smart_garage_door_opener_msg100_main_channel",
+            state="open",
+            friendly_name="Smart Garage Door Opener (msg100) - Main channel",
+            attributes={"device_class": "garage"},
         ),
         EntityState(
             entity_id="light.kitchen",

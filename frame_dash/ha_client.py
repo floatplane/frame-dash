@@ -57,6 +57,13 @@ class EntityState:
             # For appliance sensors (washer/dryer), "on" means running
             # We'd surface "off" after it was recently "on" via a separate mechanism
             return False
+        if domain == "cover":
+            # Closure covers (garage/door/gate/window) are a problem when open;
+            # shades/blinds/awnings being open is normal, so they're ignored.
+            device_class = self.attributes.get("device_class", "")
+            if device_class in ("garage", "door", "gate", "window"):
+                return self.state == "open"
+            return False
         if domain == "light":
             return self.state == "on"
         if domain == "climate":

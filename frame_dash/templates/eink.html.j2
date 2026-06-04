@@ -117,6 +117,9 @@
             {{ item.friendly_name }} unlocked
           {% elif item.domain == "light" and item.state == "on" %}
             {{ item.friendly_name }} on
+          {% elif item.domain == "cover" %}
+            {% if item.attributes.get("device_class") == "garage" %}Garage door open
+            {% else %}{{ item.friendly_name }} open{% endif %}
           {% elif item.domain == "binary_sensor" %}
             {{ item.friendly_name }} open
           {% else %}
