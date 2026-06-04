@@ -50,6 +50,13 @@ vehicle_battery_entity: "sensor.skadi_battery_state_of_charge"
 vehicle_charging_entity: "binary_sensor.skadi_charging_status"
 vehicle_plugged_entity: "binary_sensor.skadi_charger_connection"
 
+# Energy independence in the bottom strip (leave energy_home_use_entity blank to hide)
+energy_home_use_entity: "sensor.franklinwh_home_use"
+energy_grid_import_entity: "sensor.franklinwh_grid_import"
+energy_solar_power_entity: "sensor.franklinwh_solar_production"
+energy_battery_discharge_entity: "sensor.franklin_battery_discharging"
+energy_home_load_entity: "sensor.franklinwh_home_load"
+
 # E-ink display (TRMNL X)
 eink_width: 1872
 eink_height: 1404

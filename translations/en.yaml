@@ -45,6 +45,23 @@ configuration:
   vehicle_plugged_entity:
     name: Vehicle Plugged-In Entity
     description: Binary sensor that is "on" while the charger is connected.
+  energy_home_use_entity:
+    name: Energy — Home Use (today)
+    description: >-
+      Today's home consumption energy sensor (kWh). Leave blank to hide the
+      energy-independence stat.
+  energy_grid_import_entity:
+    name: Energy — Grid Import (today)
+    description: Today's grid import energy sensor (kWh).
+  energy_solar_power_entity:
+    name: Energy — Solar Power (now)
+    description: Instant solar production sensor (kW), used to pick the source icon.
+  energy_battery_discharge_entity:
+    name: Energy — Battery Discharge (now)
+    description: Instant home-battery discharge sensor (kW), used to pick the source icon.
+  energy_home_load_entity:
+    name: Energy — Home Load (now)
+    description: Instant home load sensor (kW); solar covering >=50% of it shows the sun icon.
   eink_width:
     name: E-Ink Width
     description: Horizontal resolution of the e-ink device in pixels (TRMNL X = 1872)

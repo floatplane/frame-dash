@@ -24,6 +24,7 @@ from frame_dash.config import Config, WatchedEntities
 from frame_dash.ha_client import (
     CalendarEvent,
     DashboardData,
+    EnergyData,
     EntityState,
     HourlyForecast,
     VehicleData,
@@ -218,6 +219,7 @@ def fake_data(now: datetime) -> DashboardData:
             charging=True,
             plugged_in=True,
         ),
+        energy=EnergyData(independence=98.0, source="solar"),
     )
 
 

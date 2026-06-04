@@ -285,6 +285,31 @@ html, body {
   stroke-linejoin: round;
 }
 
+/* Energy-independence tile */
+.eink__energy-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.energy-icon {
+  width: 34px;
+  height: 40px;
+  display: block;
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.eink__energy-value {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
 .eink__updated {
   font-size: 24px;
   color: var(--fg-muted);

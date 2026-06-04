@@ -46,6 +46,13 @@ class Config:
     vehicle_charging_entity: str = ""
     vehicle_plugged_entity: str = ""
 
+    # Energy-independence widget. Empty home-use entity = hidden.
+    energy_home_use_entity: str = ""        # today's home consumption (kWh)
+    energy_grid_import_entity: str = ""     # today's grid import (kWh)
+    energy_solar_power_entity: str = ""     # instant solar production (kW)
+    energy_battery_discharge_entity: str = ""  # instant battery discharge (kW)
+    energy_home_load_entity: str = ""       # instant home load (kW)
+
     # E-ink (TRMNL X) render + TRMNL Webhook Image delivery
     eink_width: int = 1872
     eink_height: int = 1404
@@ -95,6 +102,11 @@ class Config:
             vehicle_battery_entity=raw.get("vehicle_battery_entity", ""),
             vehicle_charging_entity=raw.get("vehicle_charging_entity", ""),
             vehicle_plugged_entity=raw.get("vehicle_plugged_entity", ""),
+            energy_home_use_entity=raw.get("energy_home_use_entity", ""),
+            energy_grid_import_entity=raw.get("energy_grid_import_entity", ""),
+            energy_solar_power_entity=raw.get("energy_solar_power_entity", ""),
+            energy_battery_discharge_entity=raw.get("energy_battery_discharge_entity", ""),
+            energy_home_load_entity=raw.get("energy_home_load_entity", ""),
             eink_width=raw.get("eink_width", 1872),
             eink_height=raw.get("eink_height", 1404),
             eink_webhook_url=raw.get("eink_webhook_url", ""),

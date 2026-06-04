@@ -116,6 +116,12 @@ class VehicleData:
 
 
 @dataclass
+class EnergyData:
+    independence: float | None  # % of today's home energy not from the grid
+    source: str  # current dominant source: "solar" | "battery" | "grid"
+
+
+@dataclass
 class DashboardData:
     """All data needed to render a single frame of the dashboard."""
     timestamp: datetime
@@ -128,6 +134,7 @@ class DashboardData:
     sunrise: datetime | None = None
     sunset: datetime | None = None
     vehicle: VehicleData | None = None
+    energy: EnergyData | None = None
 
 
 class HAClient:
@@ -384,6 +391,48 @@ class HAClient:
             plugged_in=plugged,
         )
 
+    def get_energy(self) -> EnergyData | None:
+        """Build the energy-independence widget data.
+
+        Independence = share of today's home consumption that did NOT come from
+        the grid (1 - grid_import / home_use). The icon reflects the current
+        dominant source: solar if it covers >=50% of home load, else battery if
+        discharging, else grid.
+        """
+        cfg = self.config
+        if not cfg.energy_home_use_entity:
+            return None
+
+        def num(eid: str) -> float | None:
+            if not eid:
+                return None
+            s = self.get_entity_state(eid)
+            if s is None:
+                return None
+            try:
+                return float(s.state)
+            except (TypeError, ValueError):
+                return None
+
+        home_use = num(cfg.energy_home_use_entity)
+        grid_import = num(cfg.energy_grid_import_entity)
+        independence = None
+        if home_use and home_use > 0 and grid_import is not None:
+            independence = max(0.0, min(100.0, (1 - grid_import / home_use) * 100))
+
+        # Current dominant source (instant power)
+        solar = num(cfg.energy_solar_power_entity) or 0.0
+        home_load = num(cfg.energy_home_load_entity) or 0.0
+        battery_discharge = num(cfg.energy_battery_discharge_entity) or 0.0
+        if solar > 0 and solar >= 0.5 * home_load:
+            source = "solar"
+        elif battery_discharge >= 0.3:
+            source = "battery"
+        else:
+            source = "grid"
+
+        return EnergyData(independence=independence, source=source)
+
     def fetch_dashboard_data(self) -> DashboardData:
         """Fetch all data needed for a dashboard render."""
         now = datetime.now().astimezone()
@@ -468,4 +517,5 @@ class HAClient:
             sunrise=sunrise,
             sunset=sunset,
             vehicle=self.get_vehicle(),
+            energy=self.get_energy(),
         )
