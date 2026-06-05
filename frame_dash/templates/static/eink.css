@@ -289,6 +289,13 @@ html, body {
   stroke-linejoin: round;
 }
 
+/* Plug — shown when connected but not actively charging (e.g. scheduled) */
+.batt-plug {
+  display: block;
+  width: 22px;
+  height: 32px;
+}
+
 /* Energy-independence tile */
 .eink__energy-row {
   display: flex;

@@ -158,6 +158,8 @@
           <div class="eink__vehicle-row">
             {% if data.vehicle.charging %}
             <svg class="batt-bolt" viewBox="0 0 24 24"><path d="M14 1 L5 13 H11 L10 23 L19 11 H13 Z"/></svg>
+            {% elif data.vehicle.plugged_in %}
+            <svg class="batt-plug" viewBox="0 0 24 24"><g stroke="#000" stroke-width="2.2" stroke-linecap="round"><line x1="9.5" y1="2.5" x2="9.5" y2="7"/><line x1="14.5" y1="2.5" x2="14.5" y2="7"/><line x1="12" y1="16" x2="12" y2="21.5"/></g><path d="M7 7.5 H17 V11 A5 5 0 0 1 7 11 Z" fill="#000"/></svg>
             {% endif %}
             {% if data.vehicle.battery is not none %}
             <span class="batt">

@@ -216,7 +216,7 @@ def fake_data(now: datetime) -> DashboardData:
             range=268.0,
             range_unit="mi",
             battery=72.0,
-            charging=True,
+            charging=False,
             plugged_in=True,
         ),
         energy=EnergyData(independence=98.0, source="solar"),
