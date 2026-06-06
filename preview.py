@@ -27,6 +27,7 @@ from frame_dash.ha_client import (
     EnergyData,
     EntityState,
     HourlyForecast,
+    TodoItem,
     VehicleData,
     WeatherData,
 )
@@ -220,6 +221,15 @@ def fake_data(now: datetime) -> DashboardData:
             plugged_in=True,
         ),
         energy=EnergyData(independence=98.0, source="solar"),
+        # Today's tasks — overdue roll forward first, then today's (timed ones
+        # carry a time), mirroring Todoist's Today smart filter.
+        todos=[
+            TodoItem(summary="Email contractor about siding bid", overdue=True),
+            TodoItem(summary="Renew vehicle registration", overdue=True),
+            TodoItem(summary="Pick up prescription", time_str="5:00 pm"),
+            TodoItem(summary="Water the garden"),
+            TodoItem(summary="Submit expense report"),
+        ],
     )
 
 

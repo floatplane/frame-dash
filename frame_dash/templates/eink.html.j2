@@ -105,8 +105,22 @@
       {% endif %}
     </div>
 
-    {# ---- Status (attention + climate) ---- #}
+    {# ---- Status (today's tasks + attention + climate) ---- #}
     <div class="eink__status">
+      {% if data.todos %}
+      <div class="eink__tasks">
+        <div class="eink__section-title">Today's Tasks</div>
+        <ul class="eink__task-list">
+          {% for t in data.todos %}
+          <li class="eink__task{% if t.overdue %} eink__task--overdue{% endif %}">
+            <span class="eink__task-dot"></span>
+            <span class="eink__task-text">{{ t.summary }}{% if t.time_str %} <span class="eink__task-time">{{ t.time_str }}</span>{% endif %}{% if t.overdue %} <span class="eink__task-overdue">overdue</span>{% endif %}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
       {% if data.attention_items %}
       <ul class="eink__status-items">
         {% for item in data.attention_items %}

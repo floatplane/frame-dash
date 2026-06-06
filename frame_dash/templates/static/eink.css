@@ -191,6 +191,65 @@ html, body {
   overflow: hidden;
 }
 
+/* ---- Today's tasks (Todoist "Today": overdue + due today) ---- */
+.eink__tasks {
+  margin-bottom: 36px;
+}
+
+.eink__task-list {
+  list-style: none;
+}
+
+.eink__task {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 9px 0;
+  font-size: 30px;
+  font-weight: 400;
+  color: var(--fg);
+}
+
+.eink__task-dot {
+  flex-shrink: 0;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--fg);
+  /* nudge the dot up to sit centered against the baseline-aligned text */
+  align-self: center;
+}
+
+.eink__task-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.eink__task-time {
+  font-size: 24px;
+  color: var(--fg-muted);
+  margin-left: 4px;
+}
+
+/* Overdue tasks: a hollow dot + a small boxed tag, no color reliance */
+.eink__task--overdue .eink__task-dot {
+  background: transparent;
+  border: 2.5px solid var(--fg);
+}
+
+.eink__task-overdue {
+  font-size: 17px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--fg);
+  border: 2px solid var(--fg);
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
 .eink__status-items {
   list-style: none;
 }

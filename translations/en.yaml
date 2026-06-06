@@ -29,6 +29,16 @@ configuration:
     description: >-
       Entity IDs or name fragments to ignore in low-battery alerts (e.g. phones,
       watches). Case-insensitive substring match.
+  todo_enabled:
+    name: Today's Tasks
+    description: >-
+      Show tasks due today. Auto-scans every to-do list (todo.* entity, e.g.
+      Todoist) and surfaces overdue + due-today items, like Todoist's Today view.
+  todo_exclude:
+    name: To-Do List Exclusions
+    description: >-
+      Entity IDs or name fragments of to-do lists to ignore (e.g. a shopping
+      list). Case-insensitive substring match.
   vehicle_name:
     name: Vehicle Name
     description: Label for the vehicle stat in the bottom strip (e.g. SKADI).

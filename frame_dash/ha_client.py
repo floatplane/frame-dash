@@ -5,7 +5,7 @@ When running as an add-on, uses the Supervisor API proxy automatically.
 """
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from dataclasses import dataclass, field
 
 import httpx
@@ -129,6 +129,14 @@ class EnergyData:
 
 
 @dataclass
+class TodoItem:
+    """A single task due today (mirrors a Todoist "Today" view entry)."""
+    summary: str
+    overdue: bool = False
+    time_str: str = ""  # "5:00 pm" for a timed task due today; "" otherwise
+
+
+@dataclass
 class DashboardData:
     """All data needed to render a single frame of the dashboard."""
     timestamp: datetime
@@ -142,6 +150,7 @@ class DashboardData:
     sunset: datetime | None = None
     vehicle: VehicleData | None = None
     energy: EnergyData | None = None
+    todos: list[TodoItem] = field(default_factory=list)
 
 
 class HAClient:
@@ -440,6 +449,88 @@ class HAClient:
 
         return EnergyData(independence=independence, source=source)
 
+    def get_todos(self, exclude: list[str]) -> list[TodoItem]:
+        """Reconstruct a Todoist-style "Today" view across all to-do lists.
+
+        Auto-discovers every `todo.*` entity (like the battery scan), pulls its
+        incomplete items via the `todo.get_items` service, and keeps the ones
+        due today or earlier — overdue tasks roll forward exactly as they do in
+        Todoist's Today smart filter. Undated tasks are not part of "Today" and
+        are skipped. `exclude` filters lists by entity-id/name substring.
+        """
+        data = self._get("/api/states")
+        if not isinstance(data, list):
+            return []
+
+        exclude_lc = [x.lower() for x in exclude]
+        today = datetime.now().astimezone().date()
+        # (sort_dt, overdue, time_str, summary) — sort_dt orders within a bucket
+        collected: list[tuple[datetime, bool, str, str]] = []
+
+        for st in data:
+            if not isinstance(st, dict):
+                continue
+            entity_id = st.get("entity_id", "")
+            if not entity_id.startswith("todo."):
+                continue
+            attrs = st.get("attributes", {})
+            name = attrs.get("friendly_name", entity_id)
+            if any(x in entity_id.lower() or x in name.lower() for x in exclude_lc):
+                continue
+
+            try:
+                resp = self.client.post(
+                    "/api/services/todo/get_items",
+                    json={"entity_id": entity_id, "status": ["needs_action"]},
+                    params={"return_response": "true"},
+                )
+                resp.raise_for_status()
+                items = (
+                    resp.json()
+                    .get("service_response", {})
+                    .get(entity_id, {})
+                    .get("items", [])
+                )
+            except (httpx.HTTPError, ValueError) as e:
+                # Lists that don't support get_items (or transient errors) are skipped
+                logger.warning(f"Could not fetch to-do items for {entity_id}: {e}")
+                continue
+
+            for it in items:
+                due_raw = it.get("due")
+                if not due_raw:
+                    continue  # undated tasks aren't part of a "Today" view
+                try:
+                    if "T" in due_raw:
+                        due_dt = datetime.fromisoformat(due_raw).astimezone()
+                        due_date = due_dt.date()
+                        sort_dt = due_dt.replace(tzinfo=None)
+                    else:
+                        due_date = date.fromisoformat(due_raw)
+                        due_dt = None
+                        sort_dt = datetime.combine(due_date, datetime.min.time())
+                except ValueError:
+                    continue
+
+                if due_date > today:
+                    continue  # future task — not due yet
+
+                overdue = due_date < today
+                # Show a time only for a timed task that's actually due today
+                time_str = (
+                    due_dt.strftime("%-I:%M %p").lower()
+                    if (due_dt is not None and not overdue)
+                    else ""
+                )
+                collected.append((sort_dt, overdue, time_str, it.get("summary", "")))
+
+        # Overdue first, then earliest-due first, then alphabetical
+        collected.sort(key=lambda x: (not x[1], x[0], x[3].lower()))
+        return [
+            TodoItem(summary=summary, overdue=overdue, time_str=time_str)
+            for _, overdue, time_str, summary in collected
+        ]
+
     def fetch_dashboard_data(self) -> DashboardData:
         """Fetch all data needed for a dashboard render."""
         now = datetime.now().astimezone()
@@ -496,6 +587,11 @@ class HAClient:
             if low_batt:
                 attention_items.append(low_batt)
 
+        # Today's to-do items (overdue + due today, across all to-do lists)
+        todos: list[TodoItem] = []
+        if self.config.todo_enabled:
+            todos = self.get_todos(self.config.todo_exclude)
+
         # Fetch weather
         weather = None
         if self.config.show_weather:
@@ -525,4 +621,5 @@ class HAClient:
             sunset=sunset,
             vehicle=self.get_vehicle(),
             energy=self.get_energy(),
+            todos=todos,
         )

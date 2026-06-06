@@ -1,6 +1,6 @@
 name: "Frame Dash"
 description: "Renders a calm family dashboard and pushes it to a TRMNL e-ink display via a Webhook Image plugin"
-version: "0.7.3"
+version: "0.8.0"
 slug: "frame-dash"
 url: "https://github.com/floatplane/frame-dash"
 arch:
@@ -27,6 +27,8 @@ options:
   low_battery_enabled: true
   low_battery_threshold: 20
   battery_exclude: []
+  todo_enabled: true
+  todo_exclude: []
   vehicle_name: "SKADI"
   vehicle_range_entity: "sensor.skadi_estimated_vehicle_range"
   vehicle_battery_entity: "sensor.skadi_battery_state_of_charge"
@@ -58,6 +60,9 @@ schema:
   low_battery_enabled: bool
   low_battery_threshold: int
   battery_exclude:
+    - str
+  todo_enabled: bool
+  todo_exclude:
     - str
   vehicle_name: str?
   vehicle_range_entity: str?

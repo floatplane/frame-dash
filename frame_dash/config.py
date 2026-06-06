@@ -39,6 +39,10 @@ class Config:
     low_battery_threshold: int = 20
     battery_exclude: list[str] = field(default_factory=list)
 
+    # Today's to-do items (auto-discovers all todo.* lists, e.g. Todoist)
+    todo_enabled: bool = True
+    todo_exclude: list[str] = field(default_factory=list)
+
     # Vehicle widget (e.g. an EV like a Rivian). Empty range entity = hidden.
     vehicle_name: str = ""
     vehicle_range_entity: str = ""
@@ -97,6 +101,8 @@ class Config:
             low_battery_enabled=raw.get("low_battery_enabled", True),
             low_battery_threshold=raw.get("low_battery_threshold", 20),
             battery_exclude=raw.get("battery_exclude", []),
+            todo_enabled=raw.get("todo_enabled", True),
+            todo_exclude=raw.get("todo_exclude", []),
             vehicle_name=raw.get("vehicle_name", ""),
             vehicle_range_entity=raw.get("vehicle_range_entity", ""),
             vehicle_battery_entity=raw.get("vehicle_battery_entity", ""),
