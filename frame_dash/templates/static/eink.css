@@ -176,7 +176,7 @@ html, body {
   font-size: 22px;
   font-weight: 400;
   color: var(--fg-muted);
-  margin-left: 4px;
+  margin-left: 12px;
 }
 
 .eink__empty {
@@ -248,6 +248,9 @@ html, body {
   padding: 1px 6px;
   margin-left: 6px;
   white-space: nowrap;
+  /* lift the box so its bottom border meets the task text's baseline */
+  position: relative;
+  bottom: 3px;
 }
 
 .eink__status-items {
