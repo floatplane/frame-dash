@@ -345,8 +345,8 @@ html, body {
 /* Charging bolt — standalone, to the left of the battery (solid black on white) */
 .batt-bolt {
   display: block;
-  width: 20px;
-  height: 32px;
+  width: 30px;
+  height: 48px;
   fill: var(--fg);
   stroke-linejoin: round;
 }
@@ -354,8 +354,8 @@ html, body {
 /* Plug — shown when connected but not actively charging (e.g. scheduled) */
 .batt-plug {
   display: block;
-  width: 22px;
-  height: 32px;
+  width: 33px;
+  height: 48px;
 }
 
 /* Energy-independence tile */
