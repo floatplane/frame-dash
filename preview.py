@@ -24,6 +24,7 @@ from frame_dash.config import Config, WatchedEntities
 from frame_dash.ha_client import (
     CalendarEvent,
     DashboardData,
+    HAClient,
     EnergyData,
     EntityState,
     HourlyForecast,
@@ -76,6 +77,15 @@ def fake_data(now: datetime) -> DashboardData:
             end=today.replace(hour=15, minute=45),
             all_day=False,
             calendar_name="Family",
+        ),
+        # Same event also on Brian's calendar — should merge into one row
+        # labeled "Family & Brian" after deduplication.
+        CalendarEvent(
+            summary="School pickup",
+            start=today.replace(hour=15, minute=15),
+            end=today.replace(hour=15, minute=45),
+            all_day=False,
+            calendar_name="Brian",
         ),
     ]
 
@@ -188,6 +198,10 @@ def fake_data(now: datetime) -> DashboardData:
         )
         for hr, temp, cond, precip in hourly_specs
     ]
+
+    # Mirror production: collapse events shared across calendars into one row
+    events_today = HAClient._merge_duplicate_events(events_today)
+    events_tomorrow = HAClient._merge_duplicate_events(events_tomorrow)
 
     weather = WeatherData(
         condition="partlycloudy",

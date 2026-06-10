@@ -531,6 +531,35 @@ class HAClient:
             for _, overdue, time_str, summary in collected
         ]
 
+    @staticmethod
+    def _merge_duplicate_events(events: list[CalendarEvent]) -> list[CalendarEvent]:
+        """Collapse the same event appearing on multiple calendars into one.
+
+        When an event is on more than one calendar (e.g. both spouses are
+        invited), HA returns an identical copy per calendar. We keep a single
+        copy and join the calendar labels with " & " (e.g. "Brian & Seonaidh").
+        Identity is (summary, start, end, all_day); first occurrence wins, and
+        calendar names are merged in the order first seen.
+        """
+        kept: dict[tuple, CalendarEvent] = {}
+        names: dict[tuple, list[str]] = {}
+        order: list[tuple] = []
+        for e in events:
+            key = (e.summary, e.start, e.end, e.all_day)
+            if key not in kept:
+                kept[key] = e
+                names[key] = []
+                order.append(key)
+            if e.calendar_name and e.calendar_name not in names[key]:
+                names[key].append(e.calendar_name)
+
+        merged = []
+        for key in order:
+            e = kept[key]
+            e.calendar_name = " & ".join(names[key])
+            merged.append(e)
+        return merged
+
     def fetch_dashboard_data(self) -> DashboardData:
         """Fetch all data needed for a dashboard render."""
         now = datetime.now().astimezone()
@@ -546,6 +575,9 @@ class HAClient:
                 cal_id, today_start, tomorrow_end, calendar_name=cal_name
             )
             all_events.extend(events)
+
+        # Collapse the same event appearing on multiple calendars into one
+        all_events = self._merge_duplicate_events(all_events)
 
         # Split into today/tomorrow by start, then sort each by time across all
         # calendars (all-day events first, then timed events ascending) so events
