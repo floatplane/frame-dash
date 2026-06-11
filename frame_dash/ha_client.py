@@ -586,8 +586,13 @@ class HAClient:
         # them into the right day with no double-counting.
         tomorrow_start = today_start + timedelta(days=1)
         sort_key = lambda e: (not e.all_day, e.start)  # noqa: E731
+        # Today: drop timed events that have already ended; keep all-day events
+        # for the whole day and any timed event still in progress.
         events_today = sorted(
-            (e for e in all_events if e.start < tomorrow_start),
+            (
+                e for e in all_events
+                if e.start < tomorrow_start and (e.all_day or e.end > now)
+            ),
             key=sort_key,
         )
         events_tomorrow = sorted(
